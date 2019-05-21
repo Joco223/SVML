@@ -79,7 +79,7 @@ void CPU::execute() {
 			registers[arg1] = registers[arg1] * registers[arg2];
 			program_counter += 3;
 			break;
-		case 0xA: //Intiger divison (Signed)s
+		case 0xA: //Intiger divison
 			if(registers[arg2] == 0) {std::cerr << "Error, can't divide by zero. Error memory location: " << program_counter << '\n'; halt = true; break;}
 			registers[arg1] = registers[arg1] / registers[arg2];
 			program_counter += 3;
@@ -91,92 +91,92 @@ void CPU::execute() {
 		case 0xC: //Increment the value in a register
 			if(registers[arg1] + 1 > std::numeric_limits<unsigned int>::max()) {overflow = true;}
 			registers[arg1]++;
-			program_counter++;
+			program_counter += 2;
 			break;
 		case 0xD: //Decrement the value in a register
 			if(registers[arg1] - 1 < 0) {underflow = true;}
 			registers[arg1]--;
-			program_counter++;
+			program_counter += 2;
 			break;
 		case 0xE: //Clear a register
 			registers[arg1] = 0;
-			program_counter++;
+			program_counter += 2;
 			break;
 
 		//Bitwise instructions-----------------------------------------------------------------------------------------------------------------------
 		case 0xF: //Bitwise and
-			registers[arg1] = registers[arg2] & registers[arg3];
-			program_counter++;
+			registers[arg1] = registers[arg1] & registers[arg2];
+			program_counter += 2;
 			break;
 		case 0x10: //Bitwise or
-			registers[arg1] = registers[arg2] | registers[arg3];
-			program_counter++;
+			registers[arg1] = registers[arg1] | registers[arg2];
+			program_counter += 2;
 			break;
 		case 0x11: //Bitwise not
-			registers[arg1] = registers[arg2] ^ 1;
-			program_counter++;
+			registers[arg1] = registers[arg1] ^ 1;
+			program_counter += 2;
 			break;
 		case 0x12: //Bitwise shift right
-			registers[arg1] = registers[arg2] >> registers[arg3];
-			program_counter++;
+			registers[arg1] = registers[arg1] >> registers[arg2];
+			program_counter += 2;
 			break;
 		case 0x13: //Bitwise shift left
-			registers[arg1] = registers[arg2] << registers[arg3];
-			program_counter++;
+			registers[arg1] = registers[arg1] << registers[arg2];
+			program_counter += 2;
 			break;
 
 		//Logical instructions-----------------------------------------------------------------------------------------------------------------------
 		case 0x14: //A == B
-			registers[arg1] = registers[arg2] == registers[arg3];
-			program_counter++;
+			registers[arg1] = registers[arg1] == registers[arg2];
+			program_counter += 3;
 			break;
 		case 0x15: //A != B
-			registers[arg1] = registers[arg2] != registers[arg3];
-			program_counter++;
+			registers[arg1] = registers[arg1] != registers[arg2];
+			program_counter += 3;
 			break;
-		case 0x16: //Signed A > B
-			registers[arg1] = static_cast<int>(registers[arg2]) > static_cast<int>(registers[arg3]);
-			program_counter++;
+		case 0x16: //A > B
+			registers[arg1] = registers[arg1] > registers[arg2];
+			program_counter += 3;
 			break;
 
-		case 0x17: //Signed A >= B
-			registers[arg1] = static_cast<int>(registers[arg2]) >= static_cast<int>(registers[arg3]);
-			program_counter++;
+		case 0x17: //A >= B
+			registers[arg1] =registers[arg1] >= registers[arg2];
+			program_counter += 3;
 			break;
 		
 
 		//Flow control instructions------------------------------------------------------------------------------------------------------------------
 		case 0x18: //Jump
-			program_counter = handle_arg(arg4);
+			program_counter = arg1;
 			break;
 		case 0x19: //Jump if the value in a register is equal to 0
 			if(registers[arg1] == 0) {
-				program_counter = handle_arg(arg4);
+				program_counter = arg2;
 			}else{
-				program_counter++;
+				program_counter += 3;
 			}
 			break;
 		case 0x1A: //Jump if the value in a register is equal to 1
 			if(registers[arg1] == 1) {
-				program_counter = handle_arg(arg4);
+				program_counter = arg2;
 			}else{
-				program_counter++;
+				program_counter += 3;
 			}
 			break;
 		case 0x1B: //Jump if overflow flag is on
 			if(overflow) {
-				program_counter = handle_arg(arg4);
+				program_counter = arg1;
 				overflow = false;
 			}else{
-				program_counter++;
+				program_counter += 2;
 			}
 			break;
 		case 0x1C: //Jump if udnerflowS flag is on
 			if(underflow) {
-				program_counter = handle_arg(arg4);
+				program_counter = arg1;
 				underflow = false;
 			}else{
-				program_counter++;
+				program_counter += 2;
 			}
 			break;
 		case 0x1D: //Reset the flags
@@ -188,17 +188,17 @@ void CPU::execute() {
 		//Stack operation instructions---------------------------------------------------------------------------------------------------------------
 		case 0x1E: //Push contents of A to the temp stack
 			tempStack.push_back(registers[arg1]);
-			program_counter++;
+			program_counter += 2;
 			break;
 		case 0x1F: //Push contents of A to the stack
 			stack.push(registers[arg1]);
-			program_counter++;
+			program_counter += 2;
 			break;
 		case 0x20: //Pop top of the stack and store it in a register
 			if(!stack.isEmpty()) {
 				registers[arg1] = stack.peek();
 				stack.pop();
-				program_counter++;
+				program_counter += 2;
 			}else{
 				std::cerr << "Error, can't pop from stack when the stack is empty. Error memory location: " << program_counter << '\n';
 				halt = true;
@@ -207,10 +207,10 @@ void CPU::execute() {
 		case 0x21: //Push next instruction memory location to the stack and jump to A
 			if(stack.getLength() + tempStack.size() + 1 <= 2048) {
 				stack.push(arg1);
-				stack.push(program_counter + 1);
+				stack.push(program_counter + 3);
 				for(int i = 0; i < tempStack.size(); ++i) {stack.push(tempStack[i]);}
 				tempStack.clear();
-				program_counter = arg4;
+				program_counter = arg2;
 			}else{
 				std::cerr << "Error, can't push new element to the stack when stack is full. Error memory location: " << program_counter << '\n';
 				halt = true;
@@ -220,7 +220,7 @@ void CPU::execute() {
 			if(!stack.isEmpty()) {
 				program_counter = stack.peek();
 				stack.pop();	
-				registers[stack.peek()] = handle_arg(arg4);
+				registers[stack.peek()] = registers[arg1];
 				stack.pop();
 			}else{
 				std::cerr << "Error, can't pop from stack when the stack is empty. Error memory location: " << program_counter << '\n';
@@ -229,16 +229,16 @@ void CPU::execute() {
 			break;
 
 		//I/O instructions---------------------------------------------------------------------------------------------------------------------------
-		case 0x23: //Print a single unsigned int to the console
-			std::cerr << handle_arg(arg4);
-			program_counter++;
-			break;
 		case 0x24: //Print a single signed int to the console
-			std::cerr << registers[arg1];
+			std::cout << registers[arg1];
 			program_counter += 2;
 			break;
 		case 0x25: //Print a single character to the console
-			std::cerr << (char)(handle_arg(arg4));
+			std::cout << (char)(handle_arg(arg4));
+			program_counter++;
+			break;
+		case 0x26:
+			std::cout << '\n';
 			program_counter++;
 			break;
 		/*case 0x26: { //Takes a line of input and stores it from a memory address onwards

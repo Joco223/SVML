@@ -65,6 +65,8 @@ namespace Compiler {
 		*/
 	};
 
+	void process_instructions(r_ins& ins);
+	void handle_if(r_ins& ins);
 	int get_op_type(std::vector<Lexer::token>& expression);
 	std::vector<Lexer::token> parse_expression(std::vector<Lexer::token>& expression);
 	std::vector<binary_op> evaluate_expression(std::vector<Lexer::token>& expression);

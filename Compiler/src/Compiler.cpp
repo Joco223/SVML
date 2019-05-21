@@ -242,8 +242,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 3:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.b, 0);
+						parse_operand(i.a, 1);
 						bytecode.push_back(0x17);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -252,8 +252,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 4:
-						parse_operand(i.b, 1);
-						parse_operand(i.a, 0);
+						parse_operand(i.a, 1);
+						parse_operand(i.b, 0);
 						bytecode.push_back(0x17);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -272,8 +272,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 6:
-						parse_operand(i.b, 1);
-						parse_operand(i.a, 0);
+						parse_operand(i.a, 1);
+						parse_operand(i.b, 0);
 						bytecode.push_back(0x16);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -360,7 +360,41 @@ namespace Compiler {
 			handle_expression(ins.arguments_ops[0]);
 			bytecode.push_back(0x24);
 			bytecode.push_back(0);
+		}else if(ins.identifier.name == "printl") {
+			bytecode.push_back(0x26);
 		}
+	}
+
+	void handle_if(r_ins& ins) {
+		handle_expression(ins.expression_ops);
+		bytecode.push_back(0x19);
+		bytecode.push_back(0);
+		int jmp_pos = bytecode.size();
+		bytecode.push_back(0);
+
+		for(auto& i : ins.child_instructions) {
+			process_instructions(i);
+		}
+
+		bytecode[jmp_pos] = bytecode.size();
+	}
+
+	void handle_while(r_ins& ins) {
+		int ret_pos = bytecode.size();
+		handle_expression(ins.expression_ops);
+		bytecode.push_back(0x19);
+		bytecode.push_back(0);
+		int jmp_pos = bytecode.size();
+		bytecode.push_back(0);
+
+		for(auto& i : ins.child_instructions) {
+			process_instructions(i);
+		}
+
+		bytecode.push_back(0x18);
+		bytecode.push_back(ret_pos);
+
+		bytecode[jmp_pos] = bytecode.size();
 	}
 
 	void process_instructions(r_ins& ins) {
@@ -372,13 +406,13 @@ namespace Compiler {
 				handle_var_change(ins);
 				break;
 			case 3:
-				//handle_if(ins);
+				handle_if(ins);
 				break;
 			case 4:
 				//handle_else(ins);
 				break;
 			case 5:
-				//handle_while(ins);
+				handle_while(ins);
 				break;
 			case 6:
 				handle_fun(ins);
