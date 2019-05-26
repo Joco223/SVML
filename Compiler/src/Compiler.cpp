@@ -2,6 +2,9 @@
 
 namespace Compiler {
 
+	std::vector<fn> functions;
+	std::vector<r_ins> function_calls;
+
 	int get_op_type(Lexer::token t) {
 		if(t.name == "^")       {return 9;}
 		else if(t.name == "*")  {return 8;}
@@ -26,7 +29,7 @@ namespace Compiler {
 
 		int e_index = 0;
 		for(auto i : expression) {
-			if(i.type != 4 && i.type != 5 && i.type != 12 && i.type != 13 && i.type != 14 && i.type != 15) {
+			if(i.type != 4 && i.type != 5 && i.type != 6 && i.type != 12 && i.type != 13 && i.type != 14 && i.type != 15) {
 				std::cout << "Invalid token: \"" << i.name << "\" in expression: \"";
 				for(auto j : expression) {std::cout << j.name << ' ';}
 				std::cout << '\b';
@@ -42,12 +45,47 @@ namespace Compiler {
 			e_index++;
 		}
 
-		for(auto i : expression) {
-			if(i.type == 14 || i.type == 15) {
-				parsed.push_back(i);
-			}else if(i.type == 4) {
-				s.push(i);
-			}else if(i.type == 5) {
+		for(int i = 0; i < expression.size(); i++) {
+			if(expression[i].type == 14 || expression[i].type == 15) {
+				if(i < expression.size()-1) {
+					if(expression[i].type == 15) {
+						if(expression[i+1].type == 4) {	
+							Lexer::token name = expression[i];
+							i += 2;
+							std::vector<std::vector<Lexer::token>> arguments;
+
+							while(i < expression.size() && expression[i].type != 5) {
+								std::vector<Lexer::token> argument;
+								while(i < expression.size() && expression[i].type != 6 && expression[i].type != 5) {
+									argument.push_back(expression[i]);
+									i++;
+								}
+								arguments.push_back(argument);
+								i++;
+							}
+							i++;
+
+							r_ins ins;
+							ins.type = 6;
+							ins.identifier = name;
+							std::vector<std::vector<binary_op>> arguments_ops;
+							for(auto& i : arguments) { arguments_ops.push_back(evaluate_expression(i)); }
+							ins.arguments_ops = arguments_ops;
+							function_calls.push_back(ins);
+							std::string a = "*" + std::to_string(function_calls.size()-1);
+							parsed.push_back({15, expression[i].line, a});
+						}else{
+							parsed.push_back(expression[i]);
+						}
+					}else{
+						parsed.push_back(expression[i]);
+					}
+				}else{
+					parsed.push_back(expression[i]);
+				}
+			}else if(expression[i].type == 4) {
+				s.push(expression[i]);
+			}else if(expression[i].type == 5) {
 				while(s.peek().type != 4) {
 					parsed.push_back(s.peek());
 					s.pop();
@@ -60,10 +98,10 @@ namespace Compiler {
 				}else{
 					top = get_op_type(s.peek());
 				} 
-				int cur = get_op_type(i);
+				int cur = get_op_type(expression[i]);
 
 				if(cur > top || top == -1) {
-					s.push(i);
+					s.push(expression[i]);
 				}else{
 					while(cur < top) {
 						if(!s.isEmpty()) {
@@ -78,7 +116,7 @@ namespace Compiler {
 							top = -1;
 						}
 					}
-					s.push(i);
+					s.push(expression[i]);
 					
 				}
 			}
@@ -112,7 +150,6 @@ namespace Compiler {
 
 	std::vector<binary_op> evaluate_expression(std::vector<Lexer::token>& base_expression) {
 		std::vector<Lexer::token> expression = parse_expression(base_expression);
-
 		jci::Stack<Lexer::token> s;
 
 		std::vector<binary_op> ops;
@@ -120,7 +157,7 @@ namespace Compiler {
 		int op_count = 0;
 		for(int i = 0; i < expression.size(); i++) {
 			if(expression[i].type == 14 || expression[i].type == 15) {
-				s.push(expression[i]);
+				s.push(expression[i]);				
 			}else{
 				std::string b = s.peek().name;
 				s.pop();
@@ -153,6 +190,7 @@ namespace Compiler {
 				n_fn.def_type = node->ins.def_type;
 				n_fn.identifier = node->ins.identifier;
 				n_fn.def_arguments = node->ins.def_arguments;
+				n_fn.start_pos = 0;
 				for(auto& i : node->nodes) { n_fn.instructions.push_back(process_node(i, fns, nullptr, &n_fn)); }
 				fns.push_back(n_fn);
 				break; }
@@ -195,13 +233,32 @@ namespace Compiler {
 	std::unordered_map<std::string, int> variables;
 	std::vector<int> bytecode;
 
-	void parse_operand(std::string operand, int op_count) {
+	void parse_operand(std::string operand, int op_count, std::vector<Parser::arg_def>* fn_vars = nullptr) {
 		if(operand[0] == '#') {
 			std::string tmp = operand.substr(1);
 			bytecode.push_back(0x3);
 			bytecode.push_back(op_count);
-			bytecode.push_back(std::stoi(tmp)+all_var_count);
-			
+			bytecode.push_back(std::stoi(tmp)+all_var_count);		
+		}else if(operand[0] == '*') {
+			int index = std::stoi(operand.substr(1));
+			process_instructions(function_calls[index], nullptr, fn_vars);
+			bytecode.push_back(0x23);
+			bytecode.push_back(op_count);
+		}else if(fn_vars != nullptr) {
+			bool found = false;
+			for(int i = 0; i < fn_vars->size(); i++) {
+				if(operand == fn_vars->at(i).value) {
+					bytecode.push_back(0x20);
+					bytecode.push_back(op_count);
+					bytecode.push_back(i);
+					found = true;
+				}
+			}
+			if(!found) {
+				bytecode.push_back(0x1);
+				bytecode.push_back(op_count);
+				bytecode.push_back(std::stoi(operand));
+			}
 		}else if(variables.count(operand) > 0) {
 			bytecode.push_back(0x3);
 			bytecode.push_back(op_count);
@@ -213,17 +270,17 @@ namespace Compiler {
 		}
 	}
 
-	void handle_expression(std::vector<binary_op> exp) {
+	void handle_expression(std::vector<binary_op> exp, std::vector<Parser::arg_def>* fn_vars = nullptr) {
 		int curr_var_count = 0;
 
 		for(auto& i : exp) {
 			if(i.op_type == -1) {
-				parse_operand(i.a, 0);
+				parse_operand(i.a, 0, fn_vars);
 			}else{	
 				switch(i.op_type) {
 					case 1:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0x15);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -232,8 +289,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 2:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0x14);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -242,8 +299,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 3:
-						parse_operand(i.b, 0);
-						parse_operand(i.a, 1);
+						parse_operand(i.b, 0, fn_vars);
+						parse_operand(i.a, 1, fn_vars);
 						bytecode.push_back(0x17);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -252,8 +309,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 4:
-						parse_operand(i.a, 1);
-						parse_operand(i.b, 0);
+						parse_operand(i.a, 1, fn_vars);
+						parse_operand(i.b, 0, fn_vars);
 						bytecode.push_back(0x17);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -262,8 +319,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 5:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0x16);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -272,8 +329,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 6:
-						parse_operand(i.a, 1);
-						parse_operand(i.b, 0);
+						parse_operand(i.a, 1, fn_vars);
+						parse_operand(i.b, 0, fn_vars);
 						bytecode.push_back(0x16);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -282,8 +339,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 7:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0xB);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -292,8 +349,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 8:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0x7);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -302,8 +359,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 9:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0x6);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -312,8 +369,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 10:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0xA);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -322,8 +379,8 @@ namespace Compiler {
 						bytecode.push_back(all_var_count+curr_var_count);
 						break;
 					case 11:
-						parse_operand(i.a, 0);
-						parse_operand(i.b, 1);
+						parse_operand(i.a, 0, fn_vars);
+						parse_operand(i.b, 1, fn_vars);
 						bytecode.push_back(0x8);
 						bytecode.push_back(0);
 						bytecode.push_back(1);
@@ -339,8 +396,8 @@ namespace Compiler {
 		all_var_count += curr_var_count;
 	}
 
-	void handle_var_def(r_ins& ins) {
-		handle_expression(ins.expression_ops);
+	void handle_var_def(r_ins& ins, std::vector<Parser::arg_def>* fn_vars = nullptr) {
+		handle_expression(ins.expression_ops, fn_vars);
 		variables.insert({ins.identifier.name, all_var_count});
 		bytecode.push_back(0x4);
 		bytecode.push_back(0);
@@ -348,47 +405,113 @@ namespace Compiler {
 		all_var_count++;
 	}
 
-	void handle_var_change(r_ins& ins) {
-		handle_expression(ins.expression_ops);
-		bytecode.push_back(0x4);
-		bytecode.push_back(0);
-		bytecode.push_back(variables[ins.identifier.name]);
+	void handle_var_change(r_ins& ins, std::vector<Parser::arg_def>* fn_vars = nullptr) {
+		handle_expression(ins.expression_ops, fn_vars);
+		if(fn_vars != nullptr) {
+			for(int i = 0; i < fn_vars->size(); i++) {
+				if(ins.identifier.name == fn_vars->at(i).value) {
+					bytecode.push_back(0x21);
+					bytecode.push_back(0);
+					bytecode.push_back(i);
+				}
+			}
+		}else{
+			bytecode.push_back(0x4);
+			bytecode.push_back(0);
+			bytecode.push_back(variables[ins.identifier.name]);
+		}	
 	}
 
-	void handle_fun(r_ins& ins) {
+	void handle_fun(r_ins& ins, std::vector<Parser::arg_def>* fn_vars = nullptr) {
 		if(ins.identifier.name == "print") {
-			handle_expression(ins.arguments_ops[0]);
+			handle_expression(ins.arguments_ops[0], fn_vars);
 			bytecode.push_back(0x24);
 			bytecode.push_back(0);
 		}else if(ins.identifier.name == "printl") {
 			bytecode.push_back(0x26);
+		}else{
+			bool found = false;
+			int fn_counter = 0;
+			for(auto& i : functions) {
+				if(ins.identifier.name == i.identifier.name) {
+					if(ins.arguments_ops.size() == i.def_arguments.size()) {
+						found = true;
+
+						for(auto& j : ins.arguments_ops) {
+							handle_expression(j, fn_vars);
+							bytecode.push_back(0x1E);
+							bytecode.push_back(0);
+						}
+
+						bytecode.push_back(0x1F);
+						bytecode.push_back(fn_counter);
+					}else{
+						std::cout << "Wrong number of arguments passed to function: " << ins.identifier.name << '\n';
+					}
+				}
+				fn_counter++;
+			}
+			if(!found) {
+				std::cout << "Function: " << ins.identifier.name << " has not been found.\n";
+			}
 		}
 	}
 
-	void handle_if(r_ins& ins) {
-		handle_expression(ins.expression_ops);
+	void handle_if(r_ins& ins, r_ins* next_ins = nullptr, std::vector<Parser::arg_def>* fn_vars = nullptr) {
+		handle_expression(ins.expression_ops, fn_vars);
 		bytecode.push_back(0x19);
 		bytecode.push_back(0);
 		int jmp_pos = bytecode.size();
 		bytecode.push_back(0);
 
-		for(auto& i : ins.child_instructions) {
-			process_instructions(i);
+		for(int i = 0; i < ins.child_instructions.size(); i++) {
+			if(i < ins.child_instructions.size()-1) {
+				process_instructions(ins.child_instructions[i], &ins.child_instructions[i+1], fn_vars);
+			}else{
+				process_instructions(ins.child_instructions[i], nullptr, fn_vars);
+			}
 		}
 
-		bytecode[jmp_pos] = bytecode.size();
+		if(next_ins != nullptr) {
+			if(next_ins->type == 4) {
+				bytecode.push_back(0x18);
+				int jmp_pos2 = bytecode.size();
+				bytecode.push_back(0);
+
+				bytecode[jmp_pos] = bytecode.size();
+
+				for(int i = 0; i < next_ins->child_instructions.size(); i++) {
+					if(i < next_ins->child_instructions.size()-1) {
+						process_instructions(next_ins->child_instructions[i], &next_ins->child_instructions[i+1], fn_vars);
+					}else{
+						process_instructions(next_ins->child_instructions[i], nullptr, fn_vars);
+					}
+				}
+
+				bytecode[jmp_pos2] = bytecode.size();
+			}else{
+				bytecode[jmp_pos] = bytecode.size();
+			}
+		}else{
+			bytecode[jmp_pos] = bytecode.size();
+		}
+		
 	}
 
-	void handle_while(r_ins& ins) {
+	void handle_while(r_ins& ins, std::vector<Parser::arg_def>* fn_vars = nullptr) {
 		int ret_pos = bytecode.size();
-		handle_expression(ins.expression_ops);
+		handle_expression(ins.expression_ops, fn_vars);
 		bytecode.push_back(0x19);
 		bytecode.push_back(0);
 		int jmp_pos = bytecode.size();
 		bytecode.push_back(0);
 
-		for(auto& i : ins.child_instructions) {
-			process_instructions(i);
+		for(int i = 0; i < ins.child_instructions.size(); i++) {
+			if(i < ins.child_instructions.size()-1) {
+				process_instructions(ins.child_instructions[i], &ins.child_instructions[i+1], fn_vars);
+			}else{
+				process_instructions(ins.child_instructions[i], nullptr, fn_vars);
+			}
 		}
 
 		bytecode.push_back(0x18);
@@ -397,38 +520,50 @@ namespace Compiler {
 		bytecode[jmp_pos] = bytecode.size();
 	}
 
-	void process_instructions(r_ins& ins) {
+	void handle_ret(r_ins& ins, std::vector<Parser::arg_def>* fn_vars = nullptr) {
+		handle_expression(ins.expression_ops, fn_vars);
+		bytecode.push_back(0x22);
+	}
+
+	void process_instructions(r_ins& ins, r_ins* next_ins, std::vector<Parser::arg_def>* fn_vars) {
 		switch(ins.type) {
-			case 1:
-				handle_var_def(ins);
+			case 1: //Variable definition
+				handle_var_def(ins, fn_vars);
 				break;
-			case 2:
-				handle_var_change(ins);
+			case 2: //Variable change
+				handle_var_change(ins, fn_vars);
 				break;
-			case 3:
-				handle_if(ins);
+			case 3: //If statement
+				handle_if(ins, next_ins, fn_vars);
 				break;
 			case 4:
-				//handle_else(ins);
+				//Nothing here since it chained with if statement
 				break;
-			case 5:
-				handle_while(ins);
+			case 5: //While statement
+				handle_while(ins, fn_vars);
 				break;
-			case 6:
-				handle_fun(ins);
+			case 6: //Function call
+				handle_fun(ins, fn_vars);
 				break;
-			case 7:
-				//handle_ret(ins);
+			case 7: //Return
+				handle_ret(ins, fn_vars);
 				break;
 			default:
-				for(auto& i : ins.child_instructions) {process_instructions(i);}
+				//for(auto& i : ins.child_instructions) {process_instructions(i);}
+
+				for(int i = 0; i < ins.child_instructions.size(); i++) {
+					if(i < ins.child_instructions.size()-1) {
+						process_instructions(ins.child_instructions[i], &ins.child_instructions[i+1], fn_vars);
+					}else{
+						process_instructions(ins.child_instructions[i], nullptr, fn_vars);
+					}
+				}
 		}
 	}
 
 	void compile(Parser::tree_node* code_tree) {
 		r_ins parent_ins;
-		std::vector<fn> functions;
-
+		
 		for(auto& i : code_tree->nodes) {
 			r_ins n_r_ins = process_node(i, functions, &parent_ins, nullptr);
 			if(n_r_ins.type != -1) {
@@ -436,10 +571,25 @@ namespace Compiler {
 			}
 		}
 
-		process_instructions(parent_ins);
+		for(auto& i : functions) {
+			i.start_pos = bytecode.size();
+			for(auto& j : i.instructions) {
+				process_instructions(j, nullptr, &i.def_arguments);
+			}
+		}
+
+		int program_start = bytecode.size();
+
+		process_instructions(parent_ins, nullptr, nullptr);
 
 		auto output = std::fstream("output.svb", std::ios::out);
     	output << all_var_count << '\n';
+		output << program_start << '\n';
+		output << functions.size() << '\n';
+
+		for(auto& i : functions) {
+			output << i.start_pos << '\n';
+		}
 
 		for(auto& i : bytecode) {
 			output << i << '\n';

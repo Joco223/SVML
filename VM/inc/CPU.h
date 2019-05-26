@@ -17,9 +17,19 @@ private:
 	bool underflow;
 	bool debug;
 
-	jci::Stack<unsigned int> stack;
-	std::vector<unsigned int> tempStack;
+	struct function_call {
+		std::vector<int> parameters;
+		int return_pos;
+	};
+
+	std::vector<function_call> fn_stack;
+	std::vector<int> tmp_parameters;
+	
+	
 	std::vector<int> registers;
+
+	std::vector<std::vector<int>> reg_stack;
+	int return_reg = 0;
 	
 	unsigned int program_counter;
 	std::vector<int> variables;
@@ -30,8 +40,9 @@ private:
 	int handle_arg(int);
 public:
 	std::vector<int> instructions;
+	std::vector<int> fn_positions;
 	
-	CPU(bool, int, std::vector<int>);
+	CPU(bool, int, std::vector<int>, int);
 	bool isHalted();
 	void tick();
 };

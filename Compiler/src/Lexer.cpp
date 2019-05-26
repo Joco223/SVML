@@ -47,7 +47,7 @@ namespace Lexer {
 		return false;
 	}
 
-	token process_chunk(bool& was_ass, std::string& chunk, int line) {
+	token process_chunk(std::string& chunk, int line) {
 		token t = {-1, line, ""};
 		clean(chunk);
 		if(chunk != "") {
@@ -84,35 +84,87 @@ namespace Lexer {
 	std::vector<token> process(std::string& input) {
 		std::vector<token> tokens;
 		std::string chunk = "";
-		bool was_ass = false;
 		int line = 1;
 		for(int i = 0; i < input.length(); i++) {
 			if(input[i] == ';') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
+				tokens.push_back(process_chunk(chunk, line));
 				tokens.push_back({1, line, ";"});
-				was_ass = false;
 			}else if(input[i] == '{') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
+				tokens.push_back(process_chunk(chunk, line));
 				tokens.push_back({2, line, "{"});
 			}else if(input[i] == '}') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
+				tokens.push_back(process_chunk(chunk, line));
 				tokens.push_back({3, line, "}"});
 			}else if(input[i] == '(') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
+				tokens.push_back(process_chunk(chunk, line));
 				tokens.push_back({4, line, "("});
 			}else if(input[i] == ')') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
+				tokens.push_back(process_chunk(chunk, line));
 				tokens.push_back({5, line, ")"});
 			}else if(input[i] == ',') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
+				tokens.push_back(process_chunk(chunk, line));
 				tokens.push_back({6, line, ","});
 			}else if(input[i] == '=') {
-				tokens.push_back(process_chunk(was_ass, chunk, line));
-				tokens.push_back({7, line, "="});
-				was_ass = true;
+				if(input[i + 1] == '=') {
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({13, line, "=="});
+					i++;
+				}else{
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({7, line, "="});
+				}
+			}else if(input[i] == '+') {
+				tokens.push_back(process_chunk(chunk, line));
+				tokens.push_back({12, line, "+"});
+			}else if(input[i] == '-') {
+				tokens.push_back(process_chunk(chunk, line));
+				tokens.push_back({12, line, "-"});
+			}else if(input[i] == '*') {
+				tokens.push_back(process_chunk(chunk, line));
+				tokens.push_back({12, line, "*"});
+			}else if(input[i] == '/') {
+				if(input[i + 1] == '/') {
+					while(i < input.length()-1) {
+						if(input[i + 1] != '\n') {
+							i++;
+						}else{
+							break;
+						}	
+					}
+				}else{
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({12, line, "/"});
+				}		
+			}else if(input[i] == '%') {
+				tokens.push_back(process_chunk(chunk, line));
+				tokens.push_back({12, line, "%"});
+			}else if(input[i] == '^') {
+				tokens.push_back(process_chunk(chunk, line));
+				tokens.push_back({12, line, "^"});
+			}else if(input[i] == '<') {
+				if(input[i + 1] == '=') {
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({13, line, "<="});
+					i++;
+				}else{
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({13, line, "<"});
+				}
+			}else if(input[i] == '>') {
+				if(input[i + 1] == '=') {
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({13, line, ">="});
+					i++;
+				}else{
+					tokens.push_back(process_chunk(chunk, line));
+					tokens.push_back({13, line, ">"});
+				}
+			}else if(input[i] == '!' && input[i + 1] == '=') {
+				tokens.push_back(process_chunk(chunk, line));
+				tokens.push_back({13, line, "!="});
 			}else if(input[i] == ' ') {
 				if(chunk != "") {
-					tokens.push_back(process_chunk(was_ass, chunk, line));
+					tokens.push_back(process_chunk(chunk, line));
 				}	
 			}else if(input[i] != '\t' && input[i] != '\n') {
 				chunk = chunk + input[i];
@@ -120,7 +172,7 @@ namespace Lexer {
 				line++;
 			}else{
 				if(input[i] != '\t' && input[i] != ' ') {
-					std::cout << "Invalid token: <" << input[i]<< "> on line: " << line << '\n';
+					std::cout << "Invalid token: <" << input[i] << "> on line: " << line << '\n';
 					tokens.clear();
 					return tokens;
 				}	

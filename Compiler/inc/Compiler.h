@@ -41,6 +41,7 @@ namespace Compiler {
 		Lexer::token identifier;
 		std::vector<Parser::arg_def> def_arguments;
 		std::vector<r_ins> instructions;
+		int start_pos;
 	};
 
 	struct r_ins { //Refined instruction
@@ -65,7 +66,8 @@ namespace Compiler {
 		*/
 	};
 
-	void process_instructions(r_ins& ins);
+	
+	void process_instructions(r_ins& ins, r_ins* next_ins, std::vector<Parser::arg_def>* fn_vars);
 	void handle_if(r_ins& ins);
 	int get_op_type(std::vector<Lexer::token>& expression);
 	std::vector<Lexer::token> parse_expression(std::vector<Lexer::token>& expression);

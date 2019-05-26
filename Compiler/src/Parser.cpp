@@ -13,7 +13,7 @@ namespace Parser {
 				std::vector<Lexer::token> expression;
 				while(next.type != 1) {
 
-					if(next.type == 4 || next.type == 5 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
+					if(next.type == 4 || next.type == 5 || next.type == 6 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
 						expression.push_back(next);
 					}else{
 						std::cout << "Invalid token: " << next.type << " " << next.name << " at: " << token.name << " " << identifier.name << " on line: " << identifier.line << ".\n";
@@ -82,7 +82,7 @@ namespace Parser {
 			std::vector<Lexer::token> expression;
 			while(next.type != 1) {
 
-				if(next.type == 4 || next.type == 5 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
+				if(next.type == 4 || next.type == 5 || next.type == 6 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
 					expression.push_back(next);
 				}else{
 					std::cout << "Invalid token: " << next.type << " " << next.name << " at: " << token.name << ".\n";
@@ -116,7 +116,7 @@ namespace Parser {
 
 					if(next.type == 5) {break;}
 
-					if(next.type == 4 || next.type == 5 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
+					if(next.type == 4 || next.type == 5 || next.type == 6 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
 						expression.push_back(next);
 					}else{
 						std::cout << "Invalid token: " << next.type << " " << next.name << " at: " << token.name << ".\n";
@@ -154,7 +154,7 @@ namespace Parser {
 			std::vector<Lexer::token> expression;
 			while(next.type != 5) {
 
-				if(next.type == 4 || next.type == 5 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
+				if(next.type == 4 || next.type == 5 || next.type == 6 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
 					expression.push_back(next);
 				}else{
 					std::cout << "Invalid token: " << next.type << " " << next.name << " at: " << token.name << ".\n";
@@ -186,7 +186,7 @@ namespace Parser {
 			Lexer::token next = tokens[++index];
 			std::vector<Lexer::token> expression;
 			while(next.type != 5) {
-				if(next.type == 4 || next.type == 5 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
+				if(next.type == 4 || next.type == 5 || next.type == 6 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
 					expression.push_back(next);
 				}else{
 					std::cout << "Invalid token: " << next.type << " " << next.name << " at: " << token.name << ".\n";
@@ -216,7 +216,7 @@ namespace Parser {
 		Lexer::token next = tokens[++index];
 		std::vector<Lexer::token> expression;
 		while(next.type != 1) {
-			if(next.type == 4 || next.type == 5 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
+			if(next.type == 4 || next.type == 5 || next.type == 6 || next.type == 12 || next.type == 13 || next.type == 14 || next.type == 15) { //Check if its a valid expression character
 				expression.push_back(next);
 			}else{
 				std::cout << "Invalid token: " << next.type << " " << next.name << " at: " << token.name << ".\n";

@@ -22,7 +22,7 @@ namespace Lexer {
 	 5: LEXER_CB - )
 	 6: LEXER_COMMA - ,
 	 7: LEXER_ASSIGNEMENT - =
-	 8: LEXER_TYPE - uint8, int8, uint16, int16, bool
+	 8: LEXER_TYPE - var
 	 9: LEXER_RETURN - ret
 	10: LEXER_IF - if
 	11: LEXER_ELSE - else

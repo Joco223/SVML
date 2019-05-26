@@ -1,15 +1,14 @@
 #include "CPU.h"
 
-CPU::CPU(bool debug_, int var_size, std::vector<int> ins) 
+CPU::CPU(bool debug_, int var_size, std::vector<int> ins, int program_start) 
 	:
 	halt(false),
 	debug(debug_),
 	overflow(false),
 	underflow(false),
-	program_counter(0)
+	program_counter(program_start)
 {
 	registers.resize(8); //8 general purpose registers
-	stack.setMaxLength(2048); //User defined stack size, default is 128 elements
 	variables.resize(var_size);
 	instructions = ins;
 }
@@ -152,6 +151,7 @@ void CPU::execute() {
 		case 0x19: //Jump if the value in a register is equal to 0
 			if(registers[arg1] == 0) {
 				program_counter = arg2;
+				std::cout << std::hex << instructions[program_counter] << '\n';
 			}else{
 				program_counter += 3;
 			}
@@ -186,7 +186,47 @@ void CPU::execute() {
 			break;
 
 		//Stack operation instructions---------------------------------------------------------------------------------------------------------------
-		case 0x1E: //Push contents of A to the temp stack
+		case 0x1E:  //Push parameter
+			tmp_parameters.push_back(registers[arg1]);
+			program_counter += 2;
+			break;
+		
+		case 0x1F: { //Push function call
+			function_call tmp;
+			for(auto i : tmp_parameters) {tmp.parameters.push_back(i);}
+			tmp_parameters.clear();
+			tmp.return_pos = program_counter + 2;
+			fn_stack.push_back(tmp);
+			program_counter = fn_positions[arg1];
+			reg_stack.push_back(registers);
+			break; }
+
+		case 0x20: //Read parameter
+			registers[arg1] = fn_stack[fn_stack.size()-1].parameters[arg2];
+			program_counter += 3;
+			break;
+		
+		case 0x21: //Write parameter
+			fn_stack[fn_stack.size()-1].parameters[arg2] = registers[arg1];
+			program_counter += 3;
+			break;
+
+		case 0x22: {//Return
+			int tmp = registers[0];
+			program_counter = fn_stack[fn_stack.size()-1].return_pos;
+			fn_stack.pop_back();
+			registers = reg_stack[reg_stack.size()-1];
+			reg_stack.pop_back();
+			return_reg = tmp;
+			break; }
+
+		case 0x23:
+			registers[arg1] = return_reg;
+			return_reg = 0;
+			program_counter += 2;
+			break;
+		
+		/*case 0x1E: //Push contents of A to the temp stack
 			tempStack.push_back(registers[arg1]);
 			program_counter += 2;
 			break;
@@ -226,11 +266,11 @@ void CPU::execute() {
 				std::cerr << "Error, can't pop from stack when the stack is empty. Error memory location: " << program_counter << '\n';
 				halt = true;
 			}
-			break;
+			break;*/
 
 		//I/O instructions---------------------------------------------------------------------------------------------------------------------------
 		case 0x24: //Print a single signed int to the console
-			std::cout << registers[arg1];
+			//std::cout << registers[arg1];
 			program_counter += 2;
 			break;
 		case 0x25: //Print a single character to the console
@@ -261,8 +301,8 @@ void CPU::execute() {
 //If the CPU is not halted, load the next instruction and execute it
 void CPU::tick() {
 	if(program_counter >= instructions.size()-1) {halt = true;}
-	if(!halt) {
-		
+	if(!halt) {	
+		//std::cout << std::dec << program_counter << ' ' << std::hex << instructions[program_counter] << '\n';
 		/*if(debug) { //Logging to a file if debug mode is on
 			std::string tmp = "Program Counter: " + std::to_string(program_counter);
 			tmp = tmp + ", memory at Program Counter: " + std::to_string((u16)memory[program_counter]);

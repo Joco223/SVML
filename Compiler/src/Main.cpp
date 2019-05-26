@@ -21,21 +21,12 @@ int main(int argc, char** argv) {
 		}
 
 		
-		auto start = std::chrono::steady_clock::now();
 		std::string input = Lexer::load_file(input_file);
 		std::vector<Lexer::token> tokens = Lexer::process(input);
-		auto end = std::chrono::steady_clock::now();
-		auto start2 = std::chrono::steady_clock::now();
 		Parser::tree_node* code_tree = Parser::process(tokens, debug);
-		auto end2 = std::chrono::steady_clock::now();
-		//auto start3 = std::chrono::steady_clock::now();
 		Compiler::compile(code_tree);
-		//auto end3 = std::chrono::steady_clock::now();
 
-		//std::cout << "Lexer time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << '\n';
-		//std::cout << "Parser time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end2 - start2).count() << '\n';
-		//std::cout << "Compiler time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end3 - start3).count() << '\n';
-	}
+		}
 
 	/*//"1=2*(3^4-5)^(6+7*8)-9"
 	//a b c d ^ e - f g h * + ^ * + i -
