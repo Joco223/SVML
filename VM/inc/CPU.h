@@ -1,48 +1,37 @@
 #pragma once
 
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <string>
-#include <limits>
-
-#include "Stack.h"
-
-typedef unsigned char u8;
 
 class CPU {
+public:
+	struct instruction {
+		unsigned char op_code;
+		std::vector<unsigned int> args;
+	};
+	
+
+	struct function {
+		int program_counter, id; //Local program counter for reach instruction and id used for calling functions
+
+		std::vector<instruction> instructions; //Local function instructions
+		std::vector<unsigned int> memory; //Local function memory
+		std::vector<unsigned int> offsets; //Offsets from each variable to the start of the next one
+	};
+	
+	CPU(std::vector<function>); //Constructor is supplied with function templates
+	void tick();
 private:
 	bool halt;
-	bool overflow;
-	bool underflow;
-	bool debug;
-
-	struct function_call {
-		std::vector<int> parameters;
-		int return_pos;
-	};
-
-	std::vector<function_call> fn_stack;
-	std::vector<int> tmp_parameters;
 	
+	std::vector<unsigned int> registers; //Int registers
+	std::vector<float> f_registers; //Float registers
 	
-	std::vector<int> registers;
-
-	std::vector<std::vector<int>> reg_stack;
-	int return_reg = 0;
+	std::vector<function> function_templates; //Function templates for calling functions
+	std::vector<function> function_stack; //Stack of functions that CPU is working with
+	unsigned int fn_stack_top = 0;
 	
-	unsigned int program_counter;
-	std::vector<int> variables;
-
-	std::vector<std::string> log;
-
-	void execute();
-	int handle_arg(int);
-public:
-	std::vector<int> instructions;
-	std::vector<int> fn_positions;
-	
-	CPU(bool, int, std::vector<int>, int);
-	bool isHalted();
-	void tick();
+	unsigned int get_mem_offset(unsigned int index, function& target_fn);
+	void execute(instruction c_ins);
 };

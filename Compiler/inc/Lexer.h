@@ -12,28 +12,31 @@ namespace Lexer {
 		int type, line;
 		std::string name;
 	};
+	
+	enum token_types {
+		lexer_eoi = 1,    //End of instruction
+		lexer_ocb,        //Open curly bracket
+		lexer_ccb,        //Closed curly bracket
+		lexer_ob,         //Open bracket
+		lexer_cb,         //Closed bracket
+		lexer_osb,        //Open square bracket
+		lexer_csb,        //Closed square braket
+		lexer_comma,
+		lexer_point,
+		lexer_assign,
+		lexer_type,       //int, void
+		lexer_value,
+		lexer_identifier,
+		lexer_struct,
+		lexer_arithmetic, //+, -, *, /, %, ^
+		lexer_logic,      //<, >, <=, >=, ==, !=
+		lexer_return,
+		lexer_if,
+		lexer_else,
+		lexer_while
+	};
 
-	/*
-	Token types:
-	 1: LEXER_EOI - ;
-	 2: LEXER_OCB - {
-	 3: LEXER CCB - }
-	 4: LEXER_OB - (
-	 5: LEXER_CB - )
-	 6: LEXER_COMMA - ,
-	 7: LEXER_ASSIGNEMENT - =
-	 8: LEXER_TYPE - var
-	 9: LEXER_RETURN - ret
-	10: LEXER_IF - if
-	11: LEXER_ELSE - else
-	12: LEXER_ARITHMETIC - +, -, *, /, %, ^
-	13: LEXER_LOGIC - <, >, <=, >=, ==, !=
-	14: LEXER_VALUE - Any number
-	15: LEXER_IDENT - Identifier
-	16: LEXER_WHILE - while
-	*/
-
-	static const std::vector<std::string> types = {"var"};
+	static const std::vector<std::string> types = {"int", "void"};
 
 	std::string load_file(std::string&);
 	std::vector<token> process(std::string&);

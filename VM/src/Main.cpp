@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
 			if(i.first == "input")  {input_file = i.second;}
 		}*/
 
-		std::ifstream input(argv[1]);
+		/*std::ifstream input(argv[1]);
 		bool first = true;
 		bool second = true;
 		int tot_vars = 0;
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 
 		while(!cpu.isHalted()) {
 			cpu.tick();
-		}
+		}*/
 	//}
 	
 	return 0;

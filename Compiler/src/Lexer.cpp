@@ -4,29 +4,17 @@ namespace Lexer {
 
 	std::string load_file(std::string& file_path) {
 		std::ifstream f(file_path.c_str());
-		std::string content((std::istreambuf_iterator<char>(f)),
-							(std::istreambuf_iterator<char>()));
-
-		//content.erase(std::remove(content.begin(), content.end(), '\n'), content.end());
+		std::string content((std::istreambuf_iterator<char>(f)), (std::istreambuf_iterator<char>()));
 
 		return content;
 	};
-
-	void rs_start(std::string& input) {
+	void clean(std::string& input) {
 		while(input[0] == ' ') {
 			input.erase(input.begin());
 		}
-	}
-
-	void rs_end(std::string& input) {
 		while(input[input.length()] == ' ') {
 			input.erase(input.end());
 		}
-	}
-
-	void clean(std::string& input) {
-		rs_start(input);
-		rs_end(input);
 	}
 
 	bool is_int(const std::string& s) {
@@ -47,81 +35,90 @@ namespace Lexer {
 		return false;
 	}
 
-	token process_chunk(std::string& chunk, int line) {
+	void process_chunk(std::string& chunk, int line, std::vector<token>& tokens) {
 		token t = {-1, line, ""};
-		clean(chunk);
 		if(chunk != "") {
 			if(matches_type(chunk)) {
-				t = {8,  line, chunk};
+				t = {lexer_type,  line, chunk};
 			}else if(chunk == "if") {
-				t = {10, line, "if"};
+				t = {lexer_if, line, "if"};
 			}else if(chunk == "else") {
-				t = {11, line, "else"};
+				t = {lexer_else, line, "else"};
 			}else if(chunk == "+" || chunk == "-" || chunk == "*" || chunk == "/" || chunk == "%" || chunk == "^") {
-				t = {12, line, chunk};
+				t = {lexer_arithmetic, line, chunk};
 			}else if(chunk == "<" || chunk == ">" || chunk == "<=" || chunk == ">=" || chunk == "==" || chunk == "!=") {
-				t = {13, line, chunk};
+				t = {lexer_logic, line, chunk};
 			}else if(chunk == "while") {
-				t = {16, line, "while"};
-			}else if(chunk == "ret") {
-				t = {9,  line, "ret"};
-			}else if(chunk == "struct") {
-				t = {17, line, "struct"};
+				t = {lexer_while, line, "while"};
+			}else if(chunk == "return") {
+				t = {lexer_return,  line, "return"};
 			}else{
 				if(is_int(chunk) || chunk == "true" || chunk == "false") {
-					t = {14, line, chunk};
+					t = {lexer_value, line, chunk};
 				}else{
-					t = {15, line, chunk};
+					t = {lexer_identifier, line, chunk};
 				}
 			}
 			chunk = "";
-			return t;
-		}else{
-			return t;
+			tokens.push_back(t);
 		}
 	}
 
-	std::vector<token> process(std::string& input) {
+	std::vector<token> process(std::string& file_path) {
+		std::string input = load_file(file_path);
 		std::vector<token> tokens;
+		if(input.length() == 0) {
+			std::cout << "Error opening input file. Aborting.\n";
+			return tokens;
+		}
 		std::string chunk = "";
 		int line = 1;
 		for(int i = 0; i < input.length(); i++) {
 			if(input[i] == ';') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({1, line, ";"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_eoi, line, ";"});
 			}else if(input[i] == '{') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({2, line, "{"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_ocb, line, "{"});
 			}else if(input[i] == '}') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({3, line, "}"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_ccb, line, "}"});
 			}else if(input[i] == '(') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({4, line, "("});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_ob, line, "("});
 			}else if(input[i] == ')') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({5, line, ")"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_cb, line, ")"});
+			}else if(input[i] == '[') {
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_osb, line, "["});
+			}else if(input[i] == ']') {
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_csb, line, "]"});
 			}else if(input[i] == ',') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({6, line, ","});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_comma, line, ","});
+			}else if(input[i] == '.') {
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_point, line, "."});
 			}else if(input[i] == '=') {
 				if(input[i + 1] == '=') {
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({13, line, "=="});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_logic, line, "=="});
 					i++;
 				}else{
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({7, line, "="});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_assign, line, "="});
 				}
 			}else if(input[i] == '+') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({12, line, "+"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_arithmetic, line, "+"});
 			}else if(input[i] == '-') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({12, line, "-"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_arithmetic, line, "-"});
 			}else if(input[i] == '*') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({12, line, "*"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_arithmetic, line, "*"});
 			}else if(input[i] == '/') {
 				if(input[i + 1] == '/') {
 					while(i < input.length()-1) {
@@ -132,54 +129,48 @@ namespace Lexer {
 						}	
 					}
 				}else{
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({12, line, "/"});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_arithmetic, line, "/"});
 				}		
 			}else if(input[i] == '%') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({12, line, "%"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_arithmetic, line, "%"});
 			}else if(input[i] == '^') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({12, line, "^"});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_arithmetic, line, "^"});
 			}else if(input[i] == '<') {
 				if(input[i + 1] == '=') {
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({13, line, "<="});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_logic, line, "<="});
 					i++;
 				}else{
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({13, line, "<"});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_logic, line, "<"});
 				}
 			}else if(input[i] == '>') {
 				if(input[i + 1] == '=') {
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({13, line, ">="});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_logic, line, ">="});
 					i++;
 				}else{
-					tokens.push_back(process_chunk(chunk, line));
-					tokens.push_back({13, line, ">"});
+					process_chunk(chunk, line, tokens);
+					tokens.push_back({lexer_logic, line, ">"});
 				}
 			}else if(input[i] == '!' && input[i + 1] == '=') {
-				tokens.push_back(process_chunk(chunk, line));
-				tokens.push_back({13, line, "!="});
+				process_chunk(chunk, line, tokens);
+				tokens.push_back({lexer_logic, line, "!="});
 			}else if(input[i] == ' ') {
-				if(chunk != "") {
-					tokens.push_back(process_chunk(chunk, line));
-				}	
-			}else if(input[i] != '\t' && input[i] != '\n') {
-				chunk = chunk + input[i];
+				process_chunk(chunk, line, tokens);
 			}else if(input[i] == '\n') {
 				line++;
-			}else{
-				if(input[i] != '\t' && input[i] != ' ') {
-					std::cout << "Invalid token: <" << input[i] << "> on line: " << line << '\n';
-					tokens.clear();
-					return tokens;
-				}	
+			}else if(input[i] != '\t' && input[i] != '\n') {
+				chunk = chunk + input[i];
+			}else if(input[i] != '\t') {
+				std::cout << "Invalid token: <" << input[i] << "> on line: " << line << '\n';
+				tokens.clear();
+				return tokens;
 			}
 		}
-
-		tokens.erase(std::remove_if(tokens.begin(), tokens.end(), [](const token& x) { return x.type == -1; }), tokens.end());
 
 		return tokens;
 	}

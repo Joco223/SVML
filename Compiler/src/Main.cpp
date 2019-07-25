@@ -1,12 +1,11 @@
-#include "Lexer.h"
-#include "Parser.h"
-#include "cmd_arg_handler.h"
-#include "Compiler.h"
-
 #include <string>
 #include <vector>
-#include <chrono>
 #include <iostream>
+
+#include "Lexer.h"
+#include "Parser.h"
+#include "Compiler.h"
+#include "cmd_arg_handler.h"
 
 int main(int argc, char** argv) {
 	std::vector<std::pair<std::string, std::string>> arguments = handle_args(argc, argv);
@@ -20,13 +19,11 @@ int main(int argc, char** argv) {
 			if(i.first == "input")  {input_file = i.second;}
 		}
 
-		
-		std::string input = Lexer::load_file(input_file);
-		std::vector<Lexer::token> tokens = Lexer::process(input);
+		std::vector<Lexer::token> tokens = Lexer::process(input_file);
+		if(tokens.size() == 0) return -1;
 		Parser::tree_node* code_tree = Parser::process(tokens, debug);
 		Compiler::compile(code_tree);
-
-		}
+	}
 
 	/*//"1=2*(3^4-5)^(6+7*8)-9"
 	//a b c d ^ e - f g h * + ^ * + i -

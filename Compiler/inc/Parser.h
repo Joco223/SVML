@@ -4,28 +4,38 @@
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <variant>
 
 #include "Lexer.h"
 
 namespace Parser {
 
+	struct instruction;
+
+	typedef std::vector<std::variant<Lexer::token, instruction>> expression_type;
+
+	enum definition_type {
+		def_variable = 1,
+		def_function
+	};
+
 	struct definition {
-		int first;
-		std::string second;
+		int type;
+		std::string name;
 		int line;
 	};
 
 	struct arg_def {
 		Lexer::token def_type;
-		std::string value;
+		std::string identifier;
 	};
 
 	struct instruction {
 		int ins_type = -1;
 		Lexer::token def_type; //Variable type or return type for functions
 		Lexer::token identifier;
-		std::vector<Lexer::token> expression;
-		std::vector<std::vector<Lexer::token>> arguments; //Arguments for a function call
+		expression_type expression;
+		std::vector<expression_type> arguments; //Arguments for a function call
 		std::vector<arg_def> def_arguments; //Arguments when defining a function
 
 		instruction(int ins_type_) {
@@ -43,21 +53,20 @@ namespace Parser {
 			ins = instruction(-1);
 		}
 	};
+	
+	enum instruction_type {
+		it_variable_definition = 1,
+		it_function_definition,
+		it_variable_change,
+		it_function_call,
+		it_if_statement,
+		it_else,
+		it_while,
+		it_return,
+		it_ocb,
+		it_ccb
+	};
 
-	/*
-	Instruction types:
-	1: Variable definition
-	2: Function definition
-	3: Variable change
-	4: Function call
-	5: If statement
-	6: Else
-	7: While
-	8: Ret
-	9: Struct //Not supported yet
-	20: { //Removed when data tree is made
-	21: } //Same
-	*/
-
+	void print_error(std::string);
 	tree_node* process(std::vector<Lexer::token>&, bool);
 }
