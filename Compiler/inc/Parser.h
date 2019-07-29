@@ -12,7 +12,7 @@ namespace Parser {
 
 	struct instruction;
 
-	typedef std::vector<std::variant<Lexer::token, instruction>> expression_type;
+	typedef std::variant<Lexer::token, instruction> expression_type;
 
 	enum definition_type {
 		def_variable = 1,
@@ -34,8 +34,8 @@ namespace Parser {
 		int ins_type = -1;
 		Lexer::token def_type; //Variable type or return type for functions
 		Lexer::token identifier;
-		expression_type expression;
-		std::vector<expression_type> arguments; //Arguments for a function call
+		std::vector<expression_type> expression;
+		std::vector<std::vector<expression_type>> arguments; //Arguments for a function call
 		std::vector<arg_def> def_arguments; //Arguments when defining a function
 
 		instruction(int ins_type_) {

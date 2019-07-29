@@ -7,9 +7,9 @@ namespace Parser {
 		std::cout << error << '\n';
 	}
 
-	expression_type handle_expression(int& index, std::vector<Lexer::token>& tokens, int delimiter, int op_delimiter = 0) {
+	std::vector<expression_type> handle_expression(int& index, std::vector<Lexer::token>& tokens, int delimiter, int op_delimiter = 0) {
 		Lexer::token next = tokens[++index];
-		expression_type expression;
+		std::vector<expression_type> expression;
 		
 		while(next.type != delimiter && next.type != op_delimiter) {
 			if(next.type == Lexer::lexer_identifier && tokens[index + 1].type == Lexer::lexer_ob) { //Handle if expression has a function call
@@ -21,7 +21,7 @@ namespace Parser {
 				next = tokens[++index];
 
 				while(next.type != Lexer::lexer_cb) {
-					expression_type new_expression = handle_expression(index, tokens, Lexer::lexer_comma, Lexer::lexer_cb);
+					std::vector<expression_type> new_expression = handle_expression(index, tokens, Lexer::lexer_comma, Lexer::lexer_cb);
 					fc.arguments.push_back(new_expression);
 					if(tokens[index].type == Lexer::lexer_cb)
 						break;
@@ -112,7 +112,7 @@ namespace Parser {
 			Lexer::token next = tokens[++index];
 
 			while(next.type != Lexer::lexer_cb) {
-				expression_type new_expression = handle_expression(index, tokens, Lexer::lexer_comma, Lexer::lexer_cb);
+				std::vector<expression_type> new_expression = handle_expression(index, tokens, Lexer::lexer_comma, Lexer::lexer_cb);
 				if(new_expression.size() == 0)
 					return ins;
 				ins.arguments.push_back(new_expression);

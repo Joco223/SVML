@@ -11,7 +11,6 @@ public:
 		std::vector<unsigned int> args;
 	};
 	
-
 	struct function {
 		int program_counter, id; //Local program counter for reach instruction and id used for calling functions
 

@@ -28,7 +28,7 @@ namespace Lexer {
 		lexer_value,
 		lexer_identifier,
 		lexer_struct,
-		lexer_arithmetic, //+, -, *, /, %, ^
+		lexer_arithmetic, //+, -, *, /, %
 		lexer_logic,      //<, >, <=, >=, ==, !=
 		lexer_return,
 		lexer_if,

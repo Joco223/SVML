@@ -44,7 +44,7 @@ namespace Lexer {
 				t = {lexer_if, line, "if"};
 			}else if(chunk == "else") {
 				t = {lexer_else, line, "else"};
-			}else if(chunk == "+" || chunk == "-" || chunk == "*" || chunk == "/" || chunk == "%" || chunk == "^") {
+			}else if(chunk == "+" || chunk == "-" || chunk == "*" || chunk == "/" || chunk == "%") {
 				t = {lexer_arithmetic, line, chunk};
 			}else if(chunk == "<" || chunk == ">" || chunk == "<=" || chunk == ">=" || chunk == "==" || chunk == "!=") {
 				t = {lexer_logic, line, chunk};
@@ -53,7 +53,7 @@ namespace Lexer {
 			}else if(chunk == "return") {
 				t = {lexer_return,  line, "return"};
 			}else{
-				if(is_int(chunk) || chunk == "true" || chunk == "false") {
+				if(is_int(chunk)) {
 					t = {lexer_value, line, chunk};
 				}else{
 					t = {lexer_identifier, line, chunk};

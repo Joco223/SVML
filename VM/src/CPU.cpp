@@ -125,7 +125,7 @@ void CPU::execute(instruction c_ins) {
 			}
 			break;
 			
-		//Function stack control
+		//Function stack control---------------------------------------------------------------------------------------------------------------------
 		case 0x1C: {//Function call
 			function new_fn = function_templates[c_ins.args[0]];
 			unsigned int new_offset = 0;
