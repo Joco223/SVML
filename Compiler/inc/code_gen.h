@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <stack>
+#include <fstream>
 
 #include "Lexer.h"
 #include "Parser.h"
@@ -17,13 +18,13 @@ namespace code_gen {
 	struct variable {
 		std::string name;
 		int type;
-		int index;
+		int index; //Index where the variable is in memory
 	};
 
 	struct scope {
 		scope* prev = nullptr;
 		std::vector<variable> variables;
-		std::vector<scope> child_scopes;
+		std::vector<scope*> child_scopes;
 	};
 
 	struct function {
@@ -33,9 +34,6 @@ namespace code_gen {
 		int mem_count = 0;
 	};
 
-	std::vector<function> functions;
-	std::vector<bool> used_registers = {false, false, false, false, false, false, false, false};
-
-	void process_node(Parser::tree_node* node);
+	void process_node(Parser::tree_node* node, std::vector<instruction>& instructions, scope* local_scope, int& mem_count);
 	void generate(Parser::tree_node* code_tree, std::string output_file_path);
 }

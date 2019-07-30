@@ -19,11 +19,10 @@ public:
 		std::vector<unsigned int> offsets; //Offsets from each variable to the start of the next one
 	};
 	
-	CPU(std::vector<function>); //Constructor is supplied with function templates
+	CPU(std::vector<function>, int); //Constructor is supplied with function templates
 	void tick();
-private:
 	bool halt;
-	
+private:
 	std::vector<unsigned int> registers; //Int registers
 	std::vector<float> f_registers; //Float registers
 	

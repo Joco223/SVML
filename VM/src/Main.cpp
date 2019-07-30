@@ -7,55 +7,67 @@
 
 int main(int argc, char** argv) {
 
-	//std::vector<std::pair<std::string, std::string>>* arguments = handle_args(argc, argv);
+	std::vector<std::pair<std::string, std::string>> arguments = handle_args(argc, argv);
 
-	//if(arguments != nullptr) {
-		/*bool debug = false;
-		int stack_size = 128;
-		int mem_size = 65535; //32M
+	if(arguments.size() > 0) {
 		std::string input_file;
 
-		for(auto& i : *arguments) {
-			if(i.first == "debug")  {debug = true;}
-			if(i.first == "stack")  {stack_size = std::stoi(i.second);}
-			if(i.first == "memory") {mem_size = std::stoi(i.second);}
+		for(auto& i : arguments) {
 			if(i.first == "input")  {input_file = i.second;}
-		}*/
-
-		/*std::ifstream input(argv[1]);
-		bool first = true;
-		bool second = true;
-		int tot_vars = 0;
-		std::vector<int> instructions;
-		int program_start = 0;
-		int curr_line = 0;
-		int fn_end = 0;
-		std::vector<int> fn_positions;
-
-		for(std::string line; getline(input, line);) {
-			if(curr_line == 0) {
-				tot_vars = std::stoi(line);
-				first = false;
-			}else if(curr_line == 1) {
-				program_start = std::stoi(line);
-				second = false;
-			}else if(curr_line == 2) {
-				fn_end = std::stoi(line) + curr_line;
-			}else if(curr_line <= fn_end) {
-				fn_positions.push_back(std::stoi(line));
-			}else{
-				instructions.push_back(std::stoi(line));
-			}
-			curr_line++;
 		}
 
-		CPU cpu(false, tot_vars, instructions, program_start);
-		cpu.fn_positions = fn_positions;
+		std::vector<CPU::function> functions;
 
-		while(!cpu.isHalted()) {
+		std::ifstream input(input_file);
+		bool first = true;
+		int starting_function = 0;
+		int function_count = 0;
+
+		for(std::string line; getline(input, line);) {
+			if(first) {
+				starting_function = std::stoi(line);
+				first = false;
+			}else{
+				if(line == "-----") {
+					CPU::function new_func;
+					new_func.id = function_count;
+					new_func.program_counter = 0;
+					function_count++;
+					for(line; getline(input, line);) {
+						if(line == "-----") {
+							functions.push_back(new_func);
+							break;
+						}else{
+							if(line == "---") {
+								CPU::instruction new_instruction;
+								bool i_first = true;
+								for(line; getline(input, line);) {
+
+									if(line == "---") {
+										new_func.instructions.push_back(new_instruction);
+										break;
+									}else{
+										if(i_first) {
+											new_instruction.op_code = std::stoi(line);
+											i_first = false;
+										}else{
+											new_instruction.args.push_back(std::stoi(line));
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		CPU cpu(functions, starting_function);
+
+		while(!cpu.halt) {
 			cpu.tick();
-		}*/
-	//}
-	
+		}
+	}
+
 	return 0;
 }

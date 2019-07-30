@@ -21,7 +21,7 @@ namespace Parser {
 				next = tokens[++index];
 
 				while(next.type != Lexer::lexer_cb) {
-					std::vector<expression_type> new_expression = handle_expression(index, tokens, Lexer::lexer_comma, Lexer::lexer_cb);
+					std::vector<expression_type> new_expression = handle_expression(--index, tokens, Lexer::lexer_comma, Lexer::lexer_cb);
 					fc.arguments.push_back(new_expression);
 					if(tokens[index].type == Lexer::lexer_cb)
 						break;
@@ -61,15 +61,21 @@ namespace Parser {
 				
 				std::vector<arg_def> arguments;
 				
-				while(next.type != Lexer::lexer_cb) {
-					if(next.type == Lexer::lexer_comma) {
+				while(true) {
+					if(next.type == Lexer::lexer_cb && arguments.size() == 0)
+						break;
+
+					if(next.type == Lexer::lexer_comma || next.type == Lexer::lexer_cb) {
 						if(tokens[index - 1].type == Lexer::lexer_identifier && tokens[index - 2].type == Lexer::lexer_type) {
-							arguments.push_back({tokens[index - 1], tokens[index - 2].name});
+							arguments.push_back({tokens[index - 2], tokens[index - 1].name});
 						}else{
 							print_error("Invalid function definition argument: " + tokens[index - 2].name + " " + tokens[index - 1].name + " - on line " + std::to_string(next.line));
 							return ins;
 						}
 					}
+
+					if(next.type == Lexer::lexer_cb)
+						break;
 
 					next = tokens[++index];
 
