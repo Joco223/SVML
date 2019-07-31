@@ -94,6 +94,8 @@ namespace Parser {
 				ins.def_type = token;
 				ins.identifier = identifier;
 				ins.expression.clear();
+			}else if(op.type == Lexer::lexer_osb) { //Handle array initialization
+				
 			}else{
 				print_error("Invalid varialbe/function declaration: " + op.name + " - on line " + std::to_string(op.line));
 			}

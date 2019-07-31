@@ -4,7 +4,15 @@ namespace Lexer {
 
 	std::string load_file(std::string& file_path) {
 		std::ifstream f(file_path.c_str());
+
+		if(!f.good()) {
+			std::cout << "Error opening file: " << file_path << ", ignoring.\n";
+			return "";
+		}
+		
 		std::string content((std::istreambuf_iterator<char>(f)), (std::istreambuf_iterator<char>()));
+		
+		f.close();
 
 		return content;
 	};
@@ -67,10 +75,6 @@ namespace Lexer {
 	std::vector<token> process(std::string& file_path) {
 		std::string input = load_file(file_path);
 		std::vector<token> tokens;
-		if(input.length() == 0) {
-			std::cout << "Error opening input file. Aborting.\n";
-			return tokens;
-		}
 		std::string chunk = "";
 		int line = 1;
 		for(int i = 0; i < input.length(); i++) {
@@ -159,6 +163,36 @@ namespace Lexer {
 			}else if(input[i] == '!' && input[i + 1] == '=') {
 				process_chunk(chunk, line, tokens);
 				tokens.push_back({lexer_logic, line, "!="});
+			}else if(input[i] == '@') {
+				std::string use = "";
+				i++;
+				while(i < input.length()-1) {
+					if(input[i] != ' ') {
+						use = use + input[i];
+						i++;
+					}else{
+						i++;
+						break;
+					}	
+				}
+				if(use == "use") {
+					std::string additional_input = "";
+					while(i < input.length()-1) {
+						if(input[i] != ';') {
+							additional_input = additional_input + input[i];
+							i++;
+						}else{
+							break;
+						}	
+					}
+					std::vector<token> additional_tokens = process(additional_input);
+					for(auto& i : additional_tokens)
+						tokens.push_back(i);
+				}else{
+					std::cout << "Invalid macro: @" << use << " on line: " << line << '\n';
+					tokens.clear();
+					return tokens;
+				}
 			}else if(input[i] == ' ') {
 				process_chunk(chunk, line, tokens);
 			}else if(input[i] == '\n') {
