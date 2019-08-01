@@ -256,7 +256,7 @@ namespace Parser {
 
 			std::cout << "\rParser: Processing tokens - [";
 			float percent = (float)i / (float)tokens.size();
-			int filled = ceil(percent) * 20;
+			int filled = ceil(percent * 20);
 			int empty = 20 - filled;
 			for(int j = 0; j < filled; j++)
 				std::cout << '#';
@@ -291,8 +291,8 @@ namespace Parser {
 			}
 
 			std::cout << "\rParser: Building instruction tree - [";
-			float percent = (float)i / (float)instructions.size();
-			int filled = ceil(percent) * 20;
+			float percent = (float)(i+1) / (float)instructions.size();
+			int filled = ceil(percent * 20);
 			int empty = 20 - filled;
 			for(int j = 0; j < filled; j++)
 				std::cout << '#';

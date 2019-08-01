@@ -209,7 +209,7 @@ namespace Lexer {
 
 			std::cout << "\rLexer: Processing file: " << file_path << " - [";
 			float percent = (float)i / (float)input.length();
-			int filled = ceil(percent) * 20;
+			int filled = ceil(percent * 20);
 			int empty = 20 - filled;
 			for(int j = 0; j < filled; j++)
 				std::cout << '#';
