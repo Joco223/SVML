@@ -75,6 +75,8 @@ namespace Lexer {
 	std::vector<token> process(std::string& file_path) {
 		std::string input = load_file(file_path);
 		std::vector<token> tokens;
+		if(input == "")
+			return tokens;
 		std::string chunk = "";
 		int line = 1;
 		for(int i = 0; i < input.length(); i++) {
@@ -204,6 +206,16 @@ namespace Lexer {
 				tokens.clear();
 				return tokens;
 			}
+
+			std::cout << "\rLexer: Processing file: " << file_path << " - [";
+			float percent = (float)i / (float)input.length();
+			int filled = ceil(percent) * 20;
+			int empty = 20 - filled;
+			for(int j = 0; j < filled; j++)
+				std::cout << '#';
+			for(int j = 0; j < empty; j++)
+				std::cout << '-';
+			std::cout << "] - " << round(percent)*100 << "%/100%\r";
 		}
 
 		return tokens;

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <string>
 #include <variant>
+#include <math.h>
 
 #include "Lexer.h"
 

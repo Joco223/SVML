@@ -21,6 +21,11 @@ int main(int argc, char** argv) {
 		std::ifstream input;
 		input.open(input_file, std::ios::binary);
 
+		if(!input.good()) {
+			std::cout << "Error, can't open file: " << input_file << '\n';
+			return -1;
+		}
+
 		int starting_function = 0;
 		int function_count = 0;
 

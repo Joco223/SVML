@@ -632,13 +632,26 @@ namespace code_gen {
 	}
 
 	void generate(Parser::tree_node* code_tree, std::string output_file_path) {
+		int index = 0;
 		for(auto& i : code_tree->nodes) {
 			if(i->ins.ins_type != Parser::it_function_definition) {
 				print_error("Non function definition instruction found: " + std::to_string(i->ins.ins_type) + " - on line: " + std::to_string(i->ins.identifier.line));
 			}else{
 				process_function_definition(i);
 			}
+
+			std::cout << "\rCode gen: Processing functions - [";
+			float percent = (float)index / (float)code_tree->nodes.size();
+			int filled = ceil(percent) * 20;
+			int empty = 20 - filled;
+			for(int j = 0; j < filled; j++)
+				std::cout << '#';
+			for(int j = 0; j < empty; j++)
+				std::cout << '-';
+			std::cout << "] - " << round(percent)*100 << "%/100%\r";
+			index++;
 		}
+		std::cout << '\n';
 
 		int main_function_index = -1;
 		int function_count = functions.size();
@@ -661,6 +674,7 @@ namespace code_gen {
 		output_file.write((char*)&main_function_index, sizeof(main_function_index)); 
 		output_file.write((char*)&function_count, sizeof(function_count));
 
+		index = 0;
 		for(auto& i : functions) {
 			int instruction_count = i.instructions.size();
 			output_file.write((char*)&instruction_count, sizeof(instruction_count));
@@ -673,7 +687,19 @@ namespace code_gen {
 					output_file.write((char*)&k, sizeof(k));
 				}
 			}
+
+			std::cout << "\rCode gen: Writing output file - [";
+			float percent = (float)index / (float)functions.size();
+			int filled = ceil(percent) * 20;
+			int empty = 20 - filled;
+			for(int j = 0; j < filled; j++)
+				std::cout << '#';
+			for(int j = 0; j < empty; j++)
+				std::cout << '-';
+			std::cout << "] - " << round(percent)*100 << "%/100%\r";
+			index++;
 		}
+		std::cout << "\nProgram sucessfully compiled!\n";
 
 		output_file.close();
 	}

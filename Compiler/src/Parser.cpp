@@ -253,7 +253,19 @@ namespace Parser {
 
 			if(ins.ins_type != -1)
 				instructions.push_back(ins);
+
+			std::cout << "\rParser: Processing tokens - [";
+			float percent = (float)i / (float)tokens.size();
+			int filled = ceil(percent) * 20;
+			int empty = 20 - filled;
+			for(int j = 0; j < filled; j++)
+				std::cout << '#';
+			for(int j = 0; j < empty; j++)
+				std::cout << '-';
+			std::cout << "] - " << round(percent)*100 << "%/100%\r";
 		}
+
+		std::cout << '\n';
 
 		//Turn the vector into a tree data structure
 
@@ -277,6 +289,16 @@ namespace Parser {
 				tmp->prev = current;
 				current->nodes.push_back(tmp);
 			}
+
+			std::cout << "\rParser: Building instruction tree - [";
+			float percent = (float)i / (float)instructions.size();
+			int filled = ceil(percent) * 20;
+			int empty = 20 - filled;
+			for(int j = 0; j < filled; j++)
+				std::cout << '#';
+			for(int j = 0; j < empty; j++)
+				std::cout << '-';
+			std::cout << "] - " << round(percent)*100 << "%/100%\r";
 		}
 
 		if(compile)

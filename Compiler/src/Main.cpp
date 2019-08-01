@@ -23,7 +23,9 @@ int main(int argc, char** argv) {
 
 		std::vector<Lexer::token> tokens = Lexer::process(input_file);
 		if(tokens.size() == 0) return -1;
+		std::cout << '\n';
 		Parser::tree_node* code_tree = Parser::process(tokens, debug);
+		std::cout << '\n';
 		code_gen::generate(code_tree, output_file);
 	}
 

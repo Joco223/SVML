@@ -5,6 +5,7 @@
 #include <string>
 #include <stack>
 #include <fstream>
+#include <math.h>
 
 #include "Lexer.h"
 #include "Parser.h"
