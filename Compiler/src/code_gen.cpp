@@ -667,7 +667,7 @@ namespace code_gen {
 
 			for(auto& j : i.instructions) {
 				output_file.write((char*)&j.op_code, sizeof(j.op_code));
-				int argument_count = j.args.size();
+				unsigned char argument_count = j.args.size();
 				output_file.write((char*)&argument_count, sizeof(argument_count));
 				for(auto& k : j.args) {
 					output_file.write((char*)&k, sizeof(k));

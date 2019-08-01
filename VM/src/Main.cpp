@@ -36,9 +36,9 @@ int main(int argc, char** argv) {
 			for(int j = 0; j < instruction_count; j++) {
 				CPU::instruction new_instruction;
 				input.read((char*)&new_instruction.op_code, sizeof(new_instruction.op_code));
-				int argument_count = 0;
+				unsigned char argument_count = 0;
 				input.read((char*)&argument_count, sizeof(argument_count));
-				for(int k = 0; k < argument_count; k++) {
+				for(unsigned char k = 0; k < argument_count; k++) {
 					unsigned int argument = 0;
 					input.read((char*)&argument, sizeof(argument));
 					new_instruction.args.push_back(argument);
