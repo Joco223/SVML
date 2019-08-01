@@ -640,10 +640,8 @@ namespace code_gen {
 			}
 		}
 
-		std::ofstream output_file;
-		output_file.open(output_file_path);
-
-		int main_function_index = 0;
+		int main_function_index = -1;
+		int function_count = functions.size();
 
 		for(int i = 0; i < functions.size(); i++) {
 			if(functions[i].name == "main") {
@@ -652,19 +650,29 @@ namespace code_gen {
 			}
 		}
 
-		output_file << main_function_index << '\n';
+		if(main_function_index == -1) {
+			print_error("No >main< function found, aborting compilation.");
+			return;
+		}
+
+		std::ofstream output_file;
+		output_file.open(output_file_path, std::ios::binary);
+
+		output_file.write((char*)&main_function_index, sizeof(main_function_index)); 
+		output_file.write((char*)&function_count, sizeof(function_count));
 
 		for(auto& i : functions) {
-			output_file << "-----\n";
-			for(int j = 0; j < i.instructions.size(); j++) {
-				output_file << "---\n";
-				output_file << (unsigned int)i.instructions[j].op_code << '\n';
-				for(int k = 0; k < i.instructions[j].args.size(); k++) {
-					output_file << i.instructions[j].args[k] << '\n';
+			int instruction_count = i.instructions.size();
+			output_file.write((char*)&instruction_count, sizeof(instruction_count));
+
+			for(auto& j : i.instructions) {
+				output_file.write((char*)&j.op_code, sizeof(j.op_code));
+				int argument_count = j.args.size();
+				output_file.write((char*)&argument_count, sizeof(argument_count));
+				for(auto& k : j.args) {
+					output_file.write((char*)&k, sizeof(k));
 				}
-				output_file << "---\n";
 			}
-			output_file << "-----\n";
 		}
 
 		output_file.close();

@@ -61,8 +61,15 @@ std::vector<std::pair<std::string, std::string>> handle_args(int argc, char** ar
 		}
 	}
 
-	if(!has_input || !has_output) {
+	if(!has_input) {
 		std::cout << "No input file argument provided.\n";
+		std::cout << "Available arguments are:\n-i <input file>  - Input file for SVM.\n-d               - Debug mode, will output log to a file.\n-h               - Help about available parameters.\n-o <output file> - Output file path.";
+		arguments.clear();
+		return arguments;
+	}
+
+	if(!has_output) {
+		std::cout << "No output file argument provided.\n";
 		std::cout << "Available arguments are:\n-i <input file>  - Input file for SVM.\n-d               - Debug mode, will output log to a file.\n-h               - Help about available parameters.\n-o <output file> - Output file path.";
 		arguments.clear();
 		return arguments;

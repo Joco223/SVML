@@ -48,6 +48,9 @@ namespace Parser {
 
 		Lexer::token identifier = tokens[++index];
 		if(identifier.type == Lexer::lexer_identifier) { //Check the identifier
+
+			
+
 			Lexer::token op = tokens[++index];
 			if(op.type == Lexer::lexer_assign) { //Check if the variable is initialized
 				ins.def_type = token;
@@ -94,8 +97,6 @@ namespace Parser {
 				ins.def_type = token;
 				ins.identifier = identifier;
 				ins.expression.clear();
-			}else if(op.type == Lexer::lexer_osb) { //Handle array initialization
-				
 			}else{
 				print_error("Invalid varialbe/function declaration: " + op.name + " - on line " + std::to_string(op.line));
 			}

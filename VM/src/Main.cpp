@@ -18,48 +18,34 @@ int main(int argc, char** argv) {
 
 		std::vector<CPU::function> functions;
 
-		std::ifstream input(input_file);
-		bool first = true;
+		std::ifstream input;
+		input.open(input_file, std::ios::binary);
+
 		int starting_function = 0;
 		int function_count = 0;
 
-		for(std::string line; getline(input, line);) {
-			if(first) {
-				starting_function = std::stoi(line);
-				first = false;
-			}else{
-				if(line == "-----") {
-					CPU::function new_func;
-					new_func.id = function_count;
-					new_func.program_counter = 0;
-					function_count++;
-					for(line; getline(input, line);) {
-						if(line == "-----") {
-							functions.push_back(new_func);
-							break;
-						}else{
-							if(line == "---") {
-								CPU::instruction new_instruction;
-								bool i_first = true;
-								for(line; getline(input, line);) {
+		input.read((char*)&starting_function, sizeof(starting_function));
+		input.read((char*)&function_count, sizeof(function_count));
 
-									if(line == "---") {
-										new_func.instructions.push_back(new_instruction);
-										break;
-									}else{
-										if(i_first) {
-											new_instruction.op_code = std::stoi(line);
-											i_first = false;
-										}else{
-											new_instruction.args.push_back(std::stoi(line));
-										}
-									}
-								}
-							}
-						}
-					}
+		for(int i = 0; i < function_count; i++) {
+			CPU::function new_function;
+			new_function.id = i;
+			new_function.program_counter = 0;
+			int instruction_count = 0;
+			input.read((char*)&instruction_count, sizeof(instruction_count));
+			for(int j = 0; j < instruction_count; j++) {
+				CPU::instruction new_instruction;
+				input.read((char*)&new_instruction.op_code, sizeof(new_instruction.op_code));
+				int argument_count = 0;
+				input.read((char*)&argument_count, sizeof(argument_count));
+				for(int k = 0; k < argument_count; k++) {
+					unsigned int argument = 0;
+					input.read((char*)&argument, sizeof(argument));
+					new_instruction.args.push_back(argument);
 				}
+				new_function.instructions.push_back(new_instruction);
 			}
+			functions.push_back(new_function);
 		}
 
 		CPU cpu(functions, starting_function);
