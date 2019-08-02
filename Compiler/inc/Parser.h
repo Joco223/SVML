@@ -14,16 +14,24 @@ namespace Parser {
 	struct instruction;
 	struct index_var;
 
-	typedef std::variant<Lexer::token, instruction, index_var> expression_type; //Variable/value, function call, indexed_array
+	typedef std::variant<Lexer::token, instruction> expression_type; //Variable/value, function call, indexed_array
+
+	enum types {
+		t_int = 1,
+		t_void,
+		t_bool,
+		t_array
+	};
 
 	enum definition_type {
 		def_variable = 1,
 		def_function
 	};
 
-	struct index_var {
-		Lexer::token identifier;
-		std::vector<expression_type> index_expression;
+	struct var_type {
+		int type = -1;
+		std::vector<std::vector<expression_type>> dim_expressions; //Expressions for array dimension sizes
+		var_type* child_type; //For the type of data an array holds
 	};
 
 	struct definition {
@@ -41,8 +49,7 @@ namespace Parser {
 		int ins_type = -1;
 		Lexer::token def_type; //Variable type or return type for functions
 		Lexer::token identifier;
-		bool is_array = false;
-		std::vector<expression_type> index_expression;
+		std::vector<std::vector<expression_type>> index_expression; //Values for arrays
 		std::vector<expression_type> expression;
 		std::vector<std::vector<expression_type>> arguments; //Arguments for a function call
 		std::vector<arg_def> def_arguments; //Arguments when defining a function

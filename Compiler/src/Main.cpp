@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
 		if(tokens.size() == 0) return -1;
 		std::cout << '\n';
 		Parser::tree_node* code_tree = Parser::process(tokens, debug);
-		std::cout << '\n';
+		std::cout << '?';
 		code_gen::generate(code_tree, output_file);
 	}
 

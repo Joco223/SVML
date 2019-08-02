@@ -25,7 +25,7 @@ namespace Lexer {
 		lexer_comma,
 		lexer_point,
 		lexer_assign,
-		lexer_type,       //int, void
+		lexer_type,       //int, void, Array, bool
 		lexer_value,
 		lexer_identifier,
 		lexer_struct,
@@ -37,7 +37,7 @@ namespace Lexer {
 		lexer_while
 	};
 
-	static const std::vector<std::string> types = {"int", "void"};
+	static const std::vector<std::string> types = {"int", "void", "Array", "bool"};
 
 	std::string load_file(std::string&);
 	std::vector<token> process(std::string&);

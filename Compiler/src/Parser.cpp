@@ -3,7 +3,7 @@
 namespace Parser {
 	
 	void print_error(std::string error) {
-		std::cout << "\033[31m" << "ERROR" << "\033[0m - ";
+		std::cout << "\n\033[31m" << "ERROR" << "\033[0m - ";
 		std::cout << error << '\n';
 	}
 
@@ -43,21 +43,76 @@ namespace Parser {
 		return expression;
 	}
 
+	var_type handle_type_def(int& index, std::vector<Lexer::token>& tokens) {
+		var_type new_type;
+		Lexer::token type_identifier = tokens[index];
+
+		if(type_identifier.name == "Array") {
+			Lexer::token next = tokens[++index];
+			if(next.type == Lexer::lexer_osb) {
+				next = tokens[++index];
+				if(next.type == Lexer::lexer_type) {
+					var_type array_child_type = handle_type_def(index, tokens);
+					new_type.child_type = &array_child_type;
+
+					next = tokens[++index];
+					if(next.type == Lexer::lexer_comma) {
+						while(next.type != Lexer::lexer_csb) {
+							std::vector<expression_type> new_expression = handle_expression(index, tokens, Lexer::lexer_comma, Lexer::lexer_csb);
+							
+							if(new_expression.size() == 0)
+								return new_type;
+							
+							new_type.dim_expressions.push_back(new_expression);
+							next = tokens[index];
+						}
+					}else{
+						print_error("Invalid separator in array definition: " + next.name + " - on line " + std::to_string(next.line));
+						return new_type;
+					}
+				}else{
+					print_error("Unknown type in array definition: " + next.name + " - on line " + std::to_string(next.line));
+					return new_type;
+				}
+			}else{
+				print_error("Invalid array definition start: " + next.name + " - on line " + std::to_string(next.line));
+				return new_type;
+			}
+			new_type.type = t_array;
+		}else if(type_identifier.name == "void") {
+			new_type.type = t_void;
+		}else if(type_identifier.name == "bool") {
+			new_type.type = t_bool;
+		}else if(type_identifier.name == "int") {
+			new_type.type = t_int;
+		}else{
+			print_error("Unknown type: " + type_identifier.name + " - on line " + std::to_string(type_identifier.line));
+			return new_type;
+		}
+		return new_type;
+	}
+
 	instruction handle_var_def(Lexer::token& token, int& index, std::vector<Lexer::token>& tokens) {
 		instruction ins(-1);
 
-		Lexer::token identifier = tokens[++index];
+		Lexer::token identifier = tokens[index + 1];
+
+		var_type type = handle_type_def(index, tokens);
+
+		if(type.type == t_array) {
+			identifier = tokens[++index];
+		}else{
+			index++;
+		}
+
 		if(identifier.type == Lexer::lexer_identifier) { //Check the identifier
-
-			
-
 			Lexer::token op = tokens[++index];
 			if(op.type == Lexer::lexer_assign) { //Check if the variable is initialized
 				ins.def_type = token;
 				ins.identifier = identifier;
 				ins.expression = handle_expression(index, tokens, Lexer::lexer_eoi);
 				if(ins.expression.size() == 0)
-					return ins;
+					return ins;	
 				ins.ins_type = it_variable_definition;
 			}else if(op.type == Lexer::lexer_ob) { //Handle function definition
 				Lexer::token next = tokens[++index];
@@ -98,7 +153,7 @@ namespace Parser {
 				ins.identifier = identifier;
 				ins.expression.clear();
 			}else{
-				print_error("Invalid varialbe/function declaration: " + op.name + " - on line " + std::to_string(op.line));
+				print_error("Invalid variable/function declaration: " + op.name + " - on line " + std::to_string(op.line));
 			}
 		}else{
 			print_error("Invalid identifier: " + identifier.name + " - on line " + std::to_string(identifier.line));
@@ -125,6 +180,7 @@ namespace Parser {
 				if(new_expression.size() == 0)
 					return ins;
 				ins.arguments.push_back(new_expression);
+				next = tokens[++index];
 			}
 
 			ins.identifier = token;
@@ -255,7 +311,7 @@ namespace Parser {
 				instructions.push_back(ins);
 
 			std::cout << "\rParser: Processing tokens - [";
-			float percent = (float)i / (float)tokens.size();
+			float percent = (float)(i+1) / (float)tokens.size();
 			int filled = ceil(percent * 20);
 			int empty = 20 - filled;
 			for(int j = 0; j < filled; j++)

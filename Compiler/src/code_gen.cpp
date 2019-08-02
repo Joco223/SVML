@@ -6,7 +6,7 @@ namespace code_gen {
 	std::vector<bool> used_registers = {false, false, false, false, false, false, false, false};
 
 	void print_error(std::string error) {
-		std::cout << "\033[31m" << "ERROR" << "\033[0m - ";
+		std::cout << "\n\033[31m" << "ERROR" << "\033[0m - ";
 		std::cout << error << '\n';
 	}
 
