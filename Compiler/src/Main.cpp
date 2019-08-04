@@ -4,7 +4,7 @@
 
 #include "Lexer.h"
 #include "Parser.h"
-#include "code_gen.h"
+//#include "code_gen.h"
 #include "cmd_arg_handler.h"
 
 int main(int argc, char** argv) {
@@ -22,11 +22,16 @@ int main(int argc, char** argv) {
 		}
 
 		std::vector<Lexer::token> tokens = Lexer::process(input_file);
-		if(tokens.size() == 0) return -1;
+		std::cout << '\n';
+		
+		Parser::parse(tokens);
+		
+		/*if(tokens.size() == 0) return -1;
 		std::cout << '\n';
 		Parser::tree_node* code_tree = Parser::process(tokens, debug);
-		std::cout << '?';
-		code_gen::generate(code_tree, output_file);
+		if(code_tree == nullptr) return -1;	
+		std::cout << '\n';
+		code_gen::generate(code_tree, output_file);*/
 	}
 
 	return 0;

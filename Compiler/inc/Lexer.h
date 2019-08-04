@@ -15,29 +15,29 @@ namespace Lexer {
 	};
 	
 	enum token_types {
-		lexer_eoi = 1,    //End of instruction
-		lexer_ocb,        //Open curly bracket
-		lexer_ccb,        //Closed curly bracket
-		lexer_ob,         //Open bracket
-		lexer_cb,         //Closed bracket
-		lexer_osb,        //Open square bracket
-		lexer_csb,        //Closed square braket
-		lexer_comma,
-		lexer_point,
-		lexer_assign,
-		lexer_type,       //int, void, Array, bool
-		lexer_value,
-		lexer_identifier,
-		lexer_struct,
-		lexer_arithmetic, //+, -, *, /, %
-		lexer_logic,      //<, >, <=, >=, ==, !=
-		lexer_return,
-		lexer_if,
-		lexer_else,
-		lexer_while
+		tt_eoi = 1,    //End of instruction (semicolon)
+		tt_ocb,        //Open curly bracket
+		tt_ccb,        //Closed curly bracket
+		tt_ob,         //Open bracket
+		tt_cb,         //Closed bracket
+		tt_osb,        //Open square bracket
+		tt_csb,        //Closed square braket
+		tt_comma,
+		tt_point,
+		tt_assign,
+		tt_type,       //int, void, Array, bool
+		tt_value,
+		tt_identifier,
+		tt_struct,
+		tt_arithmetic, //+, -, *, /, %
+		tt_logic,      //<, >, <=, >=, ==, !=
+		tt_return,
+		tt_if,
+		tt_else,
+		tt_while
 	};
 
-	static const std::vector<std::string> types = {"int", "void", "Array", "bool"};
+	static const std::vector<std::string> types = {"int", "void", "bool"};
 
 	std::string load_file(std::string&);
 	std::vector<token> process(std::string&);

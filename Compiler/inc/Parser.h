@@ -1,75 +1,19 @@
 #pragma once
 
-#include <iostream>
 #include <vector>
-#include <algorithm>
 #include <string>
 #include <variant>
-#include <math.h>
+#include <algorithm>
 
 #include "Lexer.h"
 
 namespace Parser {
-
-	struct instruction;
-	struct index_var;
-
-	typedef std::variant<Lexer::token, instruction> expression_type; //Variable/value, function call, indexed_array
-
 	enum types {
-		t_int = 1,
-		t_void,
-		t_bool,
-		t_array
+		t_void = 1,
+		t_int,
+		t_bool
 	};
 
-	enum definition_type {
-		def_variable = 1,
-		def_function
-	};
-
-	struct var_type {
-		int type = -1;
-		std::vector<std::vector<expression_type>> dim_expressions; //Expressions for array dimension sizes
-		var_type* child_type; //For the type of data an array holds
-	};
-
-	struct definition {
-		int type;
-		std::string name;
-		int line;
-	};
-
-	struct arg_def {
-		Lexer::token def_type;
-		std::string identifier;
-	};
-
-	struct instruction {
-		int ins_type = -1;
-		Lexer::token def_type; //Variable type or return type for functions
-		Lexer::token identifier;
-		std::vector<std::vector<expression_type>> index_expression; //Values for arrays
-		std::vector<expression_type> expression;
-		std::vector<std::vector<expression_type>> arguments; //Arguments for a function call
-		std::vector<arg_def> def_arguments; //Arguments when defining a function
-
-		instruction(int ins_type_) {
-			ins_type = ins_type_;
-		}
-	};
-
-	struct tree_node {
-		tree_node* prev = nullptr;
-		instruction ins = instruction(-1);
-		std::vector<tree_node*> nodes;
-
-		tree_node() {
-			prev = nullptr;
-			ins = instruction(-1);
-		}
-	};
-	
 	enum instruction_type {
 		it_variable_definition = 1,
 		it_function_definition,
@@ -79,10 +23,44 @@ namespace Parser {
 		it_else,
 		it_while,
 		it_return,
-		it_ocb,
-		it_ccb
+		it_ocb, //Open curly bracket
+		it_ccb //Closed curly bracket
 	};
 
-	void print_error(std::string);
-	tree_node* process(std::vector<Lexer::token>&, bool);
+	struct arg_def {
+		int arg_type;
+		Lexer::token name;
+	};
+
+	struct instruction {
+		int ins_type = -1;
+		int def_type;
+		Lexer::token identifier;
+		std::vector<std::vector<Lexer::token>> expressions;
+		std::vector<arg_def> def_arguments;
+	};
+
+	struct tree_node {
+		tree_node* prev = nullptr;
+		instruction ins;
+		std::vector<tree_node*> nodes;
+	};
+
+	struct pattern_key {
+		std::vector<int> key_matches;
+		bool repeatable;
+	};
+
+	static std::vector<pattern_key> uninit_var_def = {{{Lexer::tt_type}, false}, {{Lexer::tt_identifier}, false}, {{Lexer::tt_eoi}, false}};
+	static std::vector<pattern_key> init_var_def   = {{{Lexer::tt_type}, false}, {{Lexer::tt_identifier}, false}, {{Lexer::tt_assign}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
+	static std::vector<pattern_key> fn_def         = {{{Lexer::tt_type}, false}, {{Lexer::tt_identifier}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_type, Lexer::tt_identifier, Lexer::tt_comma}, true}, {{Lexer::tt_cb}, false}};
+	static std::vector<pattern_key> var_change     = {{{Lexer::tt_identifier}, false}, {{Lexer::tt_assign}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
+	static std::vector<pattern_key> fn_call        = {{{Lexer::tt_identifier}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
+	static std::vector<pattern_key> if_stat        = {{{Lexer::tt_if}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_ocb}, false}};
+	static std::vector<pattern_key> while_stat     = {{{Lexer::tt_while}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_ocb}, false}};
+	static std::vector<pattern_key> return_stat    = {{{Lexer::tt_return}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
+
+	static std::vector<std::vector<pattern_key>> patterns = {uninit_var_def, init_var_def, fn_def, var_change, fn_call, if_stat, while_stat, return_stat};
+
+	void parse(std::vector<Lexer::token>&);
 }

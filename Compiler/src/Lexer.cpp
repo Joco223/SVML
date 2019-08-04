@@ -47,24 +47,24 @@ namespace Lexer {
 		token t = {-1, line, ""};
 		if(chunk != "") {
 			if(matches_type(chunk)) {
-				t = {lexer_type,  line, chunk};
+				t = {tt_type,  line, chunk};
 			}else if(chunk == "if") {
-				t = {lexer_if, line, "if"};
+				t = {tt_if, line, "if"};
 			}else if(chunk == "else") {
-				t = {lexer_else, line, "else"};
+				t = {tt_else, line, "else"};
 			}else if(chunk == "+" || chunk == "-" || chunk == "*" || chunk == "/" || chunk == "%") {
-				t = {lexer_arithmetic, line, chunk};
+				t = {tt_arithmetic, line, chunk};
 			}else if(chunk == "<" || chunk == ">" || chunk == "<=" || chunk == ">=" || chunk == "==" || chunk == "!=") {
-				t = {lexer_logic, line, chunk};
+				t = {tt_logic, line, chunk};
 			}else if(chunk == "while") {
-				t = {lexer_while, line, "while"};
+				t = {tt_while, line, "while"};
 			}else if(chunk == "return") {
-				t = {lexer_return,  line, "return"};
+				t = {tt_return,  line, "return"};
 			}else{
 				if(is_int(chunk)) {
-					t = {lexer_value, line, chunk};
+					t = {tt_value, line, chunk};
 				}else{
-					t = {lexer_identifier, line, chunk};
+					t = {tt_identifier, line, chunk};
 				}
 			}
 			chunk = "";
@@ -82,49 +82,49 @@ namespace Lexer {
 		for(int i = 0; i < input.length(); i++) {
 			if(input[i] == ';') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_eoi, line, ";"});
+				tokens.push_back({tt_eoi, line, ";"});
 			}else if(input[i] == '{') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_ocb, line, "{"});
+				tokens.push_back({tt_ocb, line, "{"});
 			}else if(input[i] == '}') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_ccb, line, "}"});
+				tokens.push_back({tt_ccb, line, "}"});
 			}else if(input[i] == '(') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_ob, line, "("});
+				tokens.push_back({tt_ob, line, "("});
 			}else if(input[i] == ')') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_cb, line, ")"});
+				tokens.push_back({tt_cb, line, ")"});
 			}else if(input[i] == '[') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_osb, line, "["});
+				tokens.push_back({tt_osb, line, "["});
 			}else if(input[i] == ']') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_csb, line, "]"});
+				tokens.push_back({tt_csb, line, "]"});
 			}else if(input[i] == ',') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_comma, line, ","});
+				tokens.push_back({tt_comma, line, ","});
 			}else if(input[i] == '.') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_point, line, "."});
+				tokens.push_back({tt_point, line, "."});
 			}else if(input[i] == '=') {
 				if(input[i + 1] == '=') {
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_logic, line, "=="});
+					tokens.push_back({tt_logic, line, "=="});
 					i++;
 				}else{
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_assign, line, "="});
+					tokens.push_back({tt_assign, line, "="});
 				}
 			}else if(input[i] == '+') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_arithmetic, line, "+"});
+				tokens.push_back({tt_arithmetic, line, "+"});
 			}else if(input[i] == '-') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_arithmetic, line, "-"});
+				tokens.push_back({tt_arithmetic, line, "-"});
 			}else if(input[i] == '*') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_arithmetic, line, "*"});
+				tokens.push_back({tt_arithmetic, line, "*"});
 			}else if(input[i] == '/') {
 				if(input[i + 1] == '/') {
 					while(i < input.length()-1) {
@@ -136,35 +136,35 @@ namespace Lexer {
 					}
 				}else{
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_arithmetic, line, "/"});
+					tokens.push_back({tt_arithmetic, line, "/"});
 				}		
 			}else if(input[i] == '%') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_arithmetic, line, "%"});
+				tokens.push_back({tt_arithmetic, line, "%"});
 			}else if(input[i] == '^') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_arithmetic, line, "^"});
+				tokens.push_back({tt_arithmetic, line, "^"});
 			}else if(input[i] == '<') {
 				if(input[i + 1] == '=') {
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_logic, line, "<="});
+					tokens.push_back({tt_logic, line, "<="});
 					i++;
 				}else{
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_logic, line, "<"});
+					tokens.push_back({tt_logic, line, "<"});
 				}
 			}else if(input[i] == '>') {
 				if(input[i + 1] == '=') {
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_logic, line, ">="});
+					tokens.push_back({tt_logic, line, ">="});
 					i++;
 				}else{
 					process_chunk(chunk, line, tokens);
-					tokens.push_back({lexer_logic, line, ">"});
+					tokens.push_back({tt_logic, line, ">"});
 				}
 			}else if(input[i] == '!' && input[i + 1] == '=') {
 				process_chunk(chunk, line, tokens);
-				tokens.push_back({lexer_logic, line, "!="});
+				tokens.push_back({tt_logic, line, "!="});
 			}else if(input[i] == '@') {
 				std::string use = "";
 				i++;
