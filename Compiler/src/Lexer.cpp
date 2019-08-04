@@ -208,14 +208,14 @@ namespace Lexer {
 			}
 
 			std::cout << "\rLexer: Processing file: " << file_path << " - [";
-			float percent = (float)i / (float)input.length();
+			float percent = (float)(i+1) / (float)input.length();
 			int filled = ceil(percent * 20);
 			int empty = 20 - filled;
 			for(int j = 0; j < filled; j++)
 				std::cout << '#';
 			for(int j = 0; j < empty; j++)
 				std::cout << '-';
-			std::cout << "] - " << round(percent)*100 << "%\r";
+			std::cout << "] - " << round(percent*100) << "%\r";
 		}
 
 		return tokens;

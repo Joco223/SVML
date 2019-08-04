@@ -3,6 +3,7 @@
 namespace Parser {
 	void parse(std::vector<Lexer::token>& tokens) {
 		int removed_tokens = 0;
+		int original_size = tokens.size();
 		for(int i = 0; i < tokens.size(); i++) {
 			int pattern_type = 0;
 			for(auto& j : patterns) {
@@ -83,14 +84,14 @@ namespace Parser {
 			}
 
 			std::cout << "\rParser: Processing tokens - [";
-			float percent = (float)(i+1) / (float)tokens.size();
+			float percent = (float)(i+removed_tokens+1) / (float)original_size;
 			int filled = ceil(percent * 20);
 			int empty = 20 - filled;
 			for(int j = 0; j < filled; j++)
 				std::cout << '#';
 			for(int j = 0; j < empty; j++)
 				std::cout << '-';
-			std::cout << "] - " << round(percent)*100 << "%\r";
+			std::cout << "] - " << round(percent*100) << "%\r";
 		}
 	}
 }
