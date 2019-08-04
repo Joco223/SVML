@@ -215,7 +215,7 @@ namespace Lexer {
 				std::cout << '#';
 			for(int j = 0; j < empty; j++)
 				std::cout << '-';
-			std::cout << "] - " << round(percent)*100 << "%/100%\r";
+			std::cout << "] - " << round(percent)*100 << "%\r";
 		}
 
 		return tokens;

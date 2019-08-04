@@ -22,8 +22,7 @@ int main(int argc, char** argv) {
 		}
 
 		std::vector<Lexer::token> tokens = Lexer::process(input_file);
-		std::cout << '\n';
-		
+		std::cout << '\n';	
 		Parser::parse(tokens);
 		
 		/*if(tokens.size() == 0) return -1;
