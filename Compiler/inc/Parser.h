@@ -5,6 +5,7 @@
 #include <variant>
 #include <algorithm>
 #include <math.h>
+#include <chrono>
 
 #include "Lexer.h"
 
@@ -63,5 +64,5 @@ namespace Parser {
 
 	const std::vector<std::vector<pattern_key>> patterns = {uninit_var_def, init_var_def, fn_def, var_change, fn_call, if_stat, while_stat, return_stat};
 
-	void parse(std::vector<Lexer::token>&);
+	void parse(std::vector<Lexer::token>&, bool);
 }

@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <math.h>
+#include <chrono>
 
 namespace Lexer {
 
@@ -40,6 +41,6 @@ namespace Lexer {
 	static const std::vector<std::string> types = {"int", "void", "bool"};
 
 	std::string load_file(std::string&);
-	std::vector<token> process(std::string&);
+	std::vector<token> process(std::string&, bool);
 
 }

@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <iomanip>  
 
 #include "Lexer.h"
 #include "Parser.h"
@@ -21,9 +22,10 @@ int main(int argc, char** argv) {
 			if(i.first == "output") {output_file = i.second;}
 		}
 
-		std::vector<Lexer::token> tokens = Lexer::process(input_file);
-		std::cout << '\n';	
-		Parser::parse(tokens);
+		std::ios::sync_with_stdio(false);
+		std::cout << std::fixed << std::setprecision(1);
+		std::vector<Lexer::token> tokens = Lexer::process(input_file, debug);
+		Parser::parse(tokens, debug);
 		
 		/*if(tokens.size() == 0) return -1;
 		std::cout << '\n';

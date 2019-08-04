@@ -1,9 +1,10 @@
 #include "Parser.h"
 
 namespace Parser {
-	void parse(std::vector<Lexer::token>& tokens) {
+	void parse(std::vector<Lexer::token>& tokens, bool debug) {
 		int removed_tokens = 0;
 		int original_size = tokens.size();
+		auto start = std::chrono::high_resolution_clock::now();
 		for(int i = 0; i < tokens.size(); i++) {
 			int pattern_type = 0;
 			for(auto& j : patterns) {
@@ -83,15 +84,32 @@ namespace Parser {
 				pattern_type++;
 			}
 
-			std::cout << "\rParser: Processing tokens - [";
-			float percent = (float)(i+removed_tokens+1) / (float)original_size;
-			int filled = ceil(percent * 20);
-			int empty = 20 - filled;
-			for(int j = 0; j < filled; j++)
-				std::cout << '#';
-			for(int j = 0; j < empty; j++)
-				std::cout << '-';
-			std::cout << "] - " << round(percent*100) << "%\r";
+			if(i % 100 == 0 && debug) {
+				auto end = std::chrono::high_resolution_clock::now();
+				std::cout << "\rParser: Processing tokens - [";
+				float percent = (float)(i+removed_tokens+1) / (float)original_size;
+				int filled = ceil(percent * 20);
+				int empty = 20 - filled;
+				for(int j = 0; j < filled; j++)
+					std::cout << '#';
+				for(int j = 0; j < empty; j++)
+					std::cout << '-';
+				std::cout << "] - " << (percent*100) << "%, time left: " << ((((double)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/(double)(i+removed_tokens+1)) * (original_size-i-removed_tokens-1))/1000) << "s.";
+				for(int k = 0; k < 20; k++)
+					std::cout  << ' ';
+				std::cout << '\r';
+			}	
 		}
+
+		if(debug) {
+			std::cout << "\rParser: Processing tokens - [";
+			for(int j = 0; j < 20; j++)
+				std::cout << '#';
+			std::cout << "] - " << 100 << "%, time left: 0s.";
+			for(int k = 0; k < 20; k++)
+				std::cout  << ' ';
+			std::cout << '\n';
+		}
+		
 	}
 }

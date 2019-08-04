@@ -16,6 +16,7 @@ namespace Lexer {
 
 		return content;
 	};
+
 	void clean(std::string& input) {
 		while(input[0] == ' ') {
 			input.erase(input.begin());
@@ -72,13 +73,14 @@ namespace Lexer {
 		}
 	}
 
-	std::vector<token> process(std::string& file_path) {
+	std::vector<token> process(std::string& file_path, bool debug) {
 		std::string input = load_file(file_path);
 		std::vector<token> tokens;
 		if(input == "")
 			return tokens;
 		std::string chunk = "";
 		int line = 1;
+		auto start = std::chrono::high_resolution_clock::now();
 		for(int i = 0; i < input.length(); i++) {
 			if(input[i] == ';') {
 				process_chunk(chunk, line, tokens);
@@ -187,7 +189,7 @@ namespace Lexer {
 							break;
 						}	
 					}
-					std::vector<token> additional_tokens = process(additional_input);
+					std::vector<token> additional_tokens = process(additional_input, debug);
 					for(auto& i : additional_tokens)
 						tokens.push_back(i);
 				}else{
@@ -207,17 +209,32 @@ namespace Lexer {
 				return tokens;
 			}
 
-			std::cout << "\rLexer: Processing file: " << file_path << " - [";
-			float percent = (float)(i+1) / (float)input.length();
-			int filled = ceil(percent * 20);
-			int empty = 20 - filled;
-			for(int j = 0; j < filled; j++)
-				std::cout << '#';
-			for(int j = 0; j < empty; j++)
-				std::cout << '-';
-			std::cout << "] - " << round(percent*100) << "%\r";
+			if(i % 100 == 0 && debug) {
+				auto end = std::chrono::high_resolution_clock::now();
+				std::cout << "\rLexer: Processing file: " << file_path << " - [";
+				float percent = (float)(i+1) / (float)input.length();
+				int filled = ceil(percent * 20);
+				int empty = 20 - filled;
+				for(int j = 0; j < filled; j++)
+					std::cout << '#';
+				for(int j = 0; j < empty; j++)
+					std::cout << '-';
+				std::cout << "] - " << (percent*100) << "%, time left: " << (((double)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()/(double)(i+1)) * (input.length()-i-1) / 1000) << "s.";
+				for(int k = 0; k < 20; k++)
+					std::cout  << ' ';
+				std::cout << '\r';
+				//start = std::chrono::high_resolution_clock::now();
+			}	
 		}
-
+		if(debug) {
+			std::cout << "\rLexer: Processing file: " << file_path << " - [";
+			for(int j = 0; j < 20; j++)
+				std::cout << '#';
+			std::cout << "] - " << 100 << "%, time left: 0s.";
+			for(int k = 0; k < 20; k++)
+				std::cout  << ' ';
+			std::cout << '\n';
+		}
 		return tokens;
 	}
 }
