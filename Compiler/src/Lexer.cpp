@@ -2,7 +2,7 @@
 
 namespace Lexer {
 
-	std::string load_file(std::string& file_path) {
+	const std::string load_file(std::string& file_path) {
 		std::ifstream f(file_path.c_str());
 
 		if(!f.good()) {
@@ -74,13 +74,14 @@ namespace Lexer {
 	}
 
 	std::vector<token> process(std::string& file_path, bool debug) {
-		std::string input = load_file(file_path);
+		const std::string input = load_file(file_path);
 		std::vector<token> tokens;
 		if(input == "")
 			return tokens;
 		std::string chunk = "";
 		int line = 1;
 		auto start = std::chrono::high_resolution_clock::now();
+		tokens.reserve(input.length());
 		for(int i = 0; i < input.length(); i++) {
 			if(input[i] == ';') {
 				process_chunk(chunk, line, tokens);
@@ -209,7 +210,7 @@ namespace Lexer {
 				return tokens;
 			}
 
-			if(i % 100 == 0 && debug) {
+			if(i % 300 == 0 && debug) {
 				auto end = std::chrono::high_resolution_clock::now();
 				std::cout << "\rLexer: Processing file: " << file_path << " - [";
 				float percent = (float)(i+1) / (float)input.length();

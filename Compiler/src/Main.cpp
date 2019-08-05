@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>  
+#include <chrono>
 
 #include "Lexer.h"
 #include "Parser.h"
@@ -24,8 +25,11 @@ int main(int argc, char** argv) {
 
 		std::ios::sync_with_stdio(false);
 		std::cout << std::fixed << std::setprecision(1);
+		auto start = std::chrono::high_resolution_clock::now();
 		std::vector<Lexer::token> tokens = Lexer::process(input_file, debug);
 		Parser::parse(tokens, debug);
+		auto end = std::chrono::high_resolution_clock::now();
+		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 		
 		/*if(tokens.size() == 0) return -1;
 		std::cout << '\n';

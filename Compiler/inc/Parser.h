@@ -59,10 +59,10 @@ namespace Parser {
 	const std::vector<pattern_key> var_change     = {{{Lexer::tt_identifier}, false}, {{Lexer::tt_assign}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
 	const std::vector<pattern_key> fn_call        = {{{Lexer::tt_identifier}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
 	const std::vector<pattern_key> if_stat        = {{{Lexer::tt_if}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}};
-	const std::vector<pattern_key> while_stat     = {{{Lexer::tt_while}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_ocb}, false}};
+	const std::vector<pattern_key> while_stat     = {{{Lexer::tt_while}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}};
 	const std::vector<pattern_key> return_stat    = {{{Lexer::tt_return}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
 
 	const std::vector<std::vector<pattern_key>> patterns = {uninit_var_def, init_var_def, fn_def, var_change, fn_call, if_stat, while_stat, return_stat};
 
-	void parse(std::vector<Lexer::token>&, bool);
+	void parse(const std::vector<Lexer::token>&, bool);
 }

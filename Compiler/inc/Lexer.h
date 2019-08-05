@@ -40,7 +40,7 @@ namespace Lexer {
 
 	static const std::vector<std::string> types = {"int", "void", "bool"};
 
-	std::string load_file(std::string&);
+	const std::string load_file(std::string&);
 	std::vector<token> process(std::string&, bool);
 
 }
