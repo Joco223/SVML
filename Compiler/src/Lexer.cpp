@@ -48,7 +48,7 @@ namespace Lexer {
 		token t = {-1, line, ""};
 		if(chunk != "") {
 			if(matches_type(chunk)) {
-				t = {tt_type,  line, chunk};
+				t = {tt_type, line, chunk};
 			}else if(chunk == "if") {
 				t = {tt_if, line, "if"};
 			}else if(chunk == "else") {
