@@ -13,8 +13,8 @@
 namespace Lexer {
 
 	struct token {
-		int type, line;
-		std::string name;
+		int type, line, column, file_index;
+		std::string path, name;
 	};
 	
 	enum token_types {
@@ -41,6 +41,7 @@ namespace Lexer {
 	};
 
 	static const std::vector<std::string> types = {"int", "void", "bool"};
+	extern std::vector<std::vector<std::string>> lines;
 
 	const std::string load_file(std::string&);
 	std::vector<token> process(std::string&, bool);

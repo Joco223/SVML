@@ -37,10 +37,15 @@ namespace Parser {
 		std::string name;
 	};
 
+	struct instruction_error_info {
+		int line, identifier_pos, identifier_length, file_index;
+		std::string path;
+	};
+
 	struct instruction {
 		int ins_type = -1;
 		int def_type;
-		int line;
+		instruction_error_info ins_err;
 		std::string identifier;
 		std::vector<std::vector<std::variant<Lexer::token, instruction>>> expressions;
 		std::vector<arg_def> def_arguments;

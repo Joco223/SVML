@@ -121,7 +121,7 @@ namespace code_gen {
 		}
 
 		if(index == -1) { //Function not found
-			Error_handler::error_out("Unknown function called: " + ins.identifier + " - on line: " + std::to_string(ins.line));
+			Error_handler::error_part_out("Unknown function called: " + ins.identifier + " - on: " + ins.ins_err.path + ":" + std::to_string(ins.ins_err.identifier_pos) + ":" + std::to_string(ins.ins_err.line), ins.ins_err.identifier_pos, ins.ins_err.line, ins.identifier.length(), ins.ins_err.file_index);
 			return;
 		}else{ //Function found
 			argument_mem_locations.push_back(index); //Push the function index
@@ -182,7 +182,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 								if(mem_pos == -1) {
-									Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
 									return -1;
 								}
 								instructions.push_back({0x3, {0, (unsigned int)mem_pos, 0}});
@@ -195,7 +195,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 								if(mem_pos == -1) {
-									Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
 									return -1;
 								}
 								instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
@@ -262,7 +262,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(b).name);
 								if(mem_pos == -1) {
-									Error_handler::error_out("Unknown variable used: " + std::get<0>(b).name + " - on line: " + std::to_string(std::get<0>(b).line));
+									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(b).name + " - on: " + std::get<0>(b).path + ":" + std::to_string(std::get<0>(b).column) + ":" + std::to_string(std::get<0>(b).line), std::get<0>(b).column, std::get<0>(b).line, std::get<0>(b).name.length(), std::get<0>(b).file_index);
 									return -1;
 								}
 								instructions.push_back({0x3, {1, (unsigned int)mem_pos, 0}});
@@ -279,7 +279,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(b).name);
 								if(mem_pos == -1) {
-									Error_handler::error_out("Unknown variable used: " + std::get<0>(b).name + " - on line: " + std::to_string(std::get<0>(b).line));
+									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(b).name + " - on: " + std::get<0>(b).path + ":" + std::to_string(std::get<0>(b).column) + ":" + std::to_string(std::get<0>(b).line), std::get<0>(b).column, std::get<0>(b).line, std::get<0>(b).name.length(), std::get<0>(b).file_index);
 									return -1;
 								}
 								instructions.push_back({0x3, {(unsigned int)b_used, (unsigned int)mem_pos, 0}});
@@ -429,7 +429,7 @@ namespace code_gen {
 					}else{
 						int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 						if(mem_pos == -1) {
-							Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+							Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
 							return -1;
 						}
 						instructions.push_back({0x3, {0, (unsigned int)mem_pos, 0}});
@@ -442,7 +442,7 @@ namespace code_gen {
 					}else{
 						int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 						if(mem_pos == -1) {
-							Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+							Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
 							return -1;
 						}
 						instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
@@ -629,7 +629,7 @@ namespace code_gen {
 	void generate(Parser::tree_node* code_tree, std::string output_file_path) {
 		for(auto& i : code_tree->nodes) {
 			if(i->ins.ins_type != Parser::it_function_definition) {
-				Error_handler::error_out("Non function definition instruction found: " + std::to_string(i->ins.ins_type) + " - on line: " + std::to_string(i->ins.line));
+				Error_handler::error_part_out("Non function definition instruction found: " + std::to_string(i->ins.ins_type) + " - on: " + i->ins.ins_err.path + ":" + std::to_string(i->ins.ins_err.identifier_pos) + ":" + std::to_string(i->ins.ins_err.line), i->ins.ins_err.identifier_pos, i->ins.ins_err.line, i->ins.ins_err.identifier_length, i->ins.ins_err.file_index);
 			}else{
 				process_function_definition(i);
 			}
@@ -646,7 +646,7 @@ namespace code_gen {
 		}
 
 		if(main_function_index == -1) {
-			Error_handler::error_out("No >main< function found, aborting compilation.");
+			Error_handler::error_out("No main() function found, aborting compilation.");
 			return;
 		}
 

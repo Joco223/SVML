@@ -25,7 +25,7 @@ namespace Parser {
 		}else if(type.name == "bool") {
 			return t_bool;
 		}else{
-			Error_handler::error_out("Unknown type: " + type.name + " on line: " + std::to_string(type.line));
+			Error_handler::error_part_out("Unknown type: " + type.name + " on: " + type.path + ":" + std::to_string(type.column) + ":" + std::to_string(type.line), type.column, type.line, type.name.length(), type.file_index);
 			return -1;
 		}
 	}
@@ -34,19 +34,27 @@ namespace Parser {
 
 	instruction process_uninit_var_def(const std::vector<Lexer::token>& tokens, const int match_start) {
 		instruction uninit_var_def;
-		uninit_var_def.ins_type   = it_variable_definition;
-		uninit_var_def.def_type   = get_type(tokens[match_start]);
-		uninit_var_def.identifier = tokens[match_start + 1].name;
-		uninit_var_def.line       = tokens[match_start + 1].line;
+		uninit_var_def.ins_type    = it_variable_definition;
+		uninit_var_def.def_type    = get_type(tokens[match_start]);
+		uninit_var_def.identifier  = tokens[match_start + 1].name;
+		uninit_var_def.ins_err 		 = {tokens[match_start + 1].line, 
+																	tokens[match_start + 1].column,
+																	(int)tokens[match_start + 1].name.length(),
+																	tokens[match_start + 1].file_index,
+																	tokens[match_start + 1].path};
 		return uninit_var_def;
 	}
 
 	instruction process_init_var_def(const std::vector<Lexer::token>& tokens, const int match_start, const int match_end) {
 		instruction init_var_def;
-		init_var_def.ins_type   = it_variable_definition;
-		init_var_def.def_type   = get_type(tokens[match_start]);
-		init_var_def.identifier = tokens[match_start + 1].name;
-		init_var_def.line       = tokens[match_start + 1].line;
+		init_var_def.ins_type    = it_variable_definition;
+		init_var_def.def_type    = get_type(tokens[match_start]);
+		init_var_def.identifier  = tokens[match_start + 1].name;
+		init_var_def.ins_err 		 = {tokens[match_start + 1].line, 
+																tokens[match_start + 1].column,
+																(int)tokens[match_start + 1].name.length(),
+																tokens[match_start + 1].file_index,
+																tokens[match_start + 1].path};
 
 		std::vector<std::variant<Lexer::token, instruction>> expression;
 		for(int i = match_start + 3; i <= match_end - 1; i++) {		
@@ -64,16 +72,20 @@ namespace Parser {
 
 	instruction process_fn_def(const std::vector<Lexer::token>& tokens, const int match_start, const int match_end) {
 		instruction fn_def;
-		fn_def.ins_type   = it_function_definition;
-		fn_def.def_type   = get_type(tokens[match_start]);
-		fn_def.identifier = tokens[match_start + 1].name;
-		fn_def.line       = tokens[match_start + 1].line;
+		fn_def.ins_type    = it_function_definition;
+		fn_def.def_type    = get_type(tokens[match_start]);
+		fn_def.identifier  = tokens[match_start + 1].name;
+		fn_def.ins_err 		 = {tokens[match_start + 1].line, 
+													tokens[match_start + 1].column,
+													(int)tokens[match_start + 1].name.length(),
+													tokens[match_start + 1].file_index,
+													tokens[match_start + 1].path};
 
 		for(int i = match_start + 3; i <= match_end - 1; i++) {
 			
 			arg_def argument;
 			if(tokens[i].type != Lexer::tt_type) {
-				Error_handler::error_out("Unknown type: " + tokens[i].name + " on line: " + std::to_string(tokens[i].line));
+				Error_handler::error_part_out("Unknown type: " + tokens[i].name + " on: " + tokens[i].path + ":" + std::to_string(tokens[i].column) + ":" + std::to_string(tokens[i].line), tokens[i].column, tokens[i].line, tokens[i].name.length(), tokens[i].file_index);
 				break;
 			}else{
 				argument.arg_type = get_type(tokens[i]);
@@ -84,7 +96,7 @@ namespace Parser {
 				break;
 			}else{
 				if(tokens[i].type != Lexer::tt_identifier) {
-					Error_handler::error_out("Invalid identifier: " + tokens[i].name + " on line: " + std::to_string(tokens[i].line));
+					Error_handler::error_part_out("Unknown type: " + tokens[i].name + " on: " + tokens[i].path + ":" + std::to_string(tokens[i].column) + ":" + std::to_string(tokens[i].line), tokens[i].column, tokens[i].line, tokens[i].name.length(), tokens[i].file_index);
 					break;
 				}else{
 					argument.name = tokens[i].name;
@@ -101,7 +113,11 @@ namespace Parser {
 		instruction var_change;
 		var_change.ins_type   = it_variable_change;
 		var_change.identifier = tokens[match_start].name;
-		var_change.line       = tokens[match_start + 1].line;
+		var_change.ins_err 	  = {tokens[match_start].line, 
+													   tokens[match_start].column,
+														 (int)tokens[match_start].name.length(),
+														 tokens[match_start].file_index,
+														 tokens[match_start].path};
 
 		std::vector<std::variant<Lexer::token, instruction>> expression;
 		for(int i = match_start + 2; i <= match_end - 1; i++) {
@@ -119,9 +135,13 @@ namespace Parser {
 
 	instruction process_fn_call(const std::vector<Lexer::token>& tokens, const int match_start, const int match_end) {
 		instruction fn_call;
-		fn_call.ins_type   = it_function_call;
-		fn_call.identifier = tokens[match_start].name; 
-		fn_call.line       = tokens[match_start + 1].line;
+		fn_call.ins_type    = it_function_call;
+		fn_call.identifier  = tokens[match_start].name; 
+		fn_call.ins_err 		= {tokens[match_start].line, 
+													 tokens[match_start].column,
+													 (int)tokens[match_start].name.length(),
+													 tokens[match_start].file_index,
+													 tokens[match_start].path};
 
 		for(int i = match_start + 2; i <= match_end; i++) {
 			std::vector<std::variant<Lexer::token, instruction>> expression;
