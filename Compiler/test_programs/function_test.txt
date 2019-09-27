@@ -9,7 +9,7 @@ void main() {
 	
 	int c = sum(x, y);
 	
-	if(c > 50) {
+	if(c > 2) {
 		c = c + 1;
 	}
 }

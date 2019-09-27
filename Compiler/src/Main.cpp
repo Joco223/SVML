@@ -6,7 +6,7 @@
 
 #include "Lexer.h"
 #include "Parser.h"
-//#include "code_gen.h"
+#include "code_gen.h"
 #include "cmd_arg_handler.h"
 
 int main(int argc, char** argv) {
@@ -28,6 +28,7 @@ int main(int argc, char** argv) {
 		auto start = std::chrono::high_resolution_clock::now();
 		std::vector<Lexer::token> tokens = Lexer::process(input_file, debug);
 		Parser::tree_node* root = Parser::parse(tokens, debug, 0, tokens.size());
+		code_gen::generate(root, output_file);
 		auto end = std::chrono::high_resolution_clock::now();
 		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 		
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
 		Parser::tree_node* code_tree = Parser::process(tokens, debug);
 		if(code_tree == nullptr) return -1;	
 		std::cout << '\n';
-		code_gen::generate(code_tree, output_file);*/
+		*/
 	}
 
 	return 0;

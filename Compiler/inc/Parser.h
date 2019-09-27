@@ -26,7 +26,9 @@ namespace Parser {
 		it_if_statement,
 		it_else,
 		it_while,
-		it_return
+		it_return,
+		it_ocb, //These two are temporary instructions in AST gen
+		it_ccb
 	};
 
 	struct arg_def {
@@ -37,6 +39,7 @@ namespace Parser {
 	struct instruction {
 		int ins_type = -1;
 		int def_type;
+		int line;
 		std::string identifier;
 		std::vector<std::vector<std::variant<Lexer::token, instruction>>> expressions;
 		std::vector<arg_def> def_arguments;
@@ -44,7 +47,7 @@ namespace Parser {
 
 	struct tree_node {
 		tree_node* prev = nullptr;
-		std::vector<instruction> instructions;
+		instruction ins;
 		std::vector<tree_node*> nodes;
 	};
 
@@ -60,6 +63,7 @@ namespace Parser {
 		p_var_change,
 		p_fn_call,
 		p_if_stat,
+		p_else_stat,
 		p_while_stat,
 		p_return_stat
 	};
@@ -70,10 +74,11 @@ namespace Parser {
 	const std::vector<pattern_key> var_change     = {{{Lexer::tt_identifier}, false}, {{Lexer::tt_assign}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
 	const std::vector<pattern_key> fn_call        = {{{Lexer::tt_identifier}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}};
 	const std::vector<pattern_key> if_stat        = {{{Lexer::tt_if}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}};
+	const std::vector<pattern_key> else_stat      = {{{Lexer::tt_else}, false}};
 	const std::vector<pattern_key> while_stat     = {{{Lexer::tt_while}, false}, {{Lexer::tt_ob}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}};
 	const std::vector<pattern_key> return_stat    = {{{Lexer::tt_return}, false}, {{Lexer::tt_arithmetic, Lexer::tt_logic, Lexer::tt_identifier, Lexer::tt_value, Lexer::tt_ob, Lexer::tt_cb, Lexer::tt_comma}, true}, {{Lexer::tt_eoi}, false}};
 
-	const std::vector<std::vector<pattern_key>> patterns = {uninit_var_def, init_var_def, fn_def, var_change, fn_call, if_stat, while_stat, return_stat};
+	const std::vector<std::vector<pattern_key>> patterns = {uninit_var_def, init_var_def, fn_def, var_change, fn_call, if_stat, else_stat, while_stat, return_stat};
 
 	tree_node* parse(const std::vector<Lexer::token>&, bool, const int, const int);
 }

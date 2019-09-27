@@ -40,6 +40,7 @@ namespace Parser {
 		uninit_var_def.ins_type   = it_variable_definition;
 		uninit_var_def.def_type   = get_type(tokens[match_start]);
 		uninit_var_def.identifier = tokens[match_start + 1].name;
+		uninit_var_def.line       = tokens[match_start + 1].line;
 		return uninit_var_def;
 	}
 
@@ -48,6 +49,7 @@ namespace Parser {
 		init_var_def.ins_type   = it_variable_definition;
 		init_var_def.def_type   = get_type(tokens[match_start]);
 		init_var_def.identifier = tokens[match_start + 1].name;
+		init_var_def.line       = tokens[match_start + 1].line;
 
 		std::vector<std::variant<Lexer::token, instruction>> expression;
 		for(int i = match_start + 3; i <= match_end - 1; i++) {		
@@ -68,6 +70,7 @@ namespace Parser {
 		fn_def.ins_type   = it_function_definition;
 		fn_def.def_type   = get_type(tokens[match_start]);
 		fn_def.identifier = tokens[match_start + 1].name;
+		fn_def.line       = tokens[match_start + 1].line;
 
 		for(int i = match_start + 3; i <= match_end - 1; i++) {
 			
@@ -103,6 +106,7 @@ namespace Parser {
 		instruction var_change;
 		var_change.ins_type   = it_variable_change;
 		var_change.identifier = tokens[match_start].name;
+		var_change.line       = tokens[match_start + 1].line;
 
 		std::vector<std::variant<Lexer::token, instruction>> expression;
 		for(int i = match_start + 2; i <= match_end - 1; i++) {
@@ -122,6 +126,7 @@ namespace Parser {
 		instruction fn_call;
 		fn_call.ins_type   = it_function_call;
 		fn_call.identifier = tokens[match_start].name; 
+		fn_call.line       = tokens[match_start + 1].line;
 
 		for(int i = match_start + 2; i <= match_end; i++) {
 			std::vector<std::variant<Lexer::token, instruction>> expression;
@@ -162,9 +167,17 @@ namespace Parser {
 		return if_stat;
 	}
 
+	instruction process_else_stat() {
+		instruction else_stat;
+		else_stat.ins_type = it_else;
+		return else_stat;
+	}
+
 	instruction process_while_stat(const std::vector<Lexer::token>& tokens, const int match_start, const int match_end) {
 		instruction while_stat;
 		while_stat.ins_type = it_while;
+
+		std::cout << '#' << tokens[match_start].type << '\n';
 
 		std::vector<std::variant<Lexer::token, instruction>> expression;
 		for(int i = match_start + 2; i < match_end; i++) {
@@ -207,6 +220,7 @@ namespace Parser {
 			case p_var_change:     return process_var_change(tokens, match_start, match_end);     break;
 			case p_fn_call:        return process_fn_call(tokens, match_start, match_end);        break;
 			case p_if_stat:        return process_if_stat(tokens, match_start, match_end);        break;
+			case p_else_stat:      return process_else_stat();                                    break;
 			case p_while_stat:     return process_while_stat(tokens, match_start, match_end);     break;
 			case p_return_stat:    return process_return_stat(tokens, match_start, match_end);    break;
 			default: return invalid_instruction;
@@ -331,8 +345,8 @@ namespace Parser {
 				}
 				std::cout << '\n';
 				break; }
-			case it_else: { //Not supported for now
-
+			case it_else: {
+				std::cout << "---Else statement---\n";
 				break; }
 			case it_while: {
 				std::cout << "---While statement---\n";
@@ -364,34 +378,45 @@ namespace Parser {
 	tree_node* parse(const std::vector<Lexer::token>& tokens, bool debug, const int start, const int end) {
 		std::chrono::high_resolution_clock::time_point start_t = std::chrono::high_resolution_clock::now();
 
+		std::vector<instruction> instructions;
+
+		for(int i = start; i < end; i++) {
+			instruction new_instruction;
+			if(tokens[i].type == Lexer::tt_ocb) {
+				new_instruction.ins_type = it_ocb;
+				instructions.push_back(new_instruction);
+				continue;
+			}else if(tokens[i].type == Lexer::tt_ccb){
+				new_instruction.ins_type = it_ccb;
+				instructions.push_back(new_instruction);
+				continue;
+			}
+
+			new_instruction = match_pattern(tokens, i);		
+
+			if(new_instruction.ins_type != -1)
+				instructions.push_back(new_instruction);
+		}
+
 		tree_node* code_root = new tree_node;
 		tree_node* current_node = code_root;
 
-		for(int i = start; i < end; i++) {
-			if(tokens[i].type == Lexer::tt_ocb) {
-				tree_node* new_node = new tree_node;
-				new_node->prev = current_node;
-				current_node->nodes.push_back(new_node);
-				current_node = new_node;
-			}else if(tokens[i].type == Lexer::tt_ccb){
-				current_node = current_node->prev;
+		for(int i = 0; i < instructions.size(); i++) {
+			if(instructions[i].ins_type == it_ocb) {
+				current_node = current_node->nodes[current_node->nodes.size()-1];
+			}else if(instructions[i].ins_type == it_ccb) {
+				if(current_node->prev == nullptr) {
+					break;
+				}else{
+					current_node = current_node->prev;
+				}
+			}else{
+				tree_node* tmp = new tree_node;
+				tmp->ins = instructions[i];
+				tmp->prev = current_node;
+				current_node->nodes.push_back(tmp);
 			}
-
-			instruction new_instruction = match_pattern(tokens, i);		
-
-			if(new_instruction.ins_type != -1) {
-				current_node->instructions.push_back(new_instruction);
-				print_instruction(new_instruction);
-			}
-
-			if(i % 100 == 0 && debug)
-				print_info(start_t, i, end);
 		}
-
-		if(debug) {
-			print_info(start_t, end-1, end);
-		}
-
 
 		return code_root;
 	}
