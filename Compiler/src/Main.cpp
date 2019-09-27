@@ -8,6 +8,7 @@
 #include "Parser.h"
 #include "code_gen.h"
 #include "cmd_arg_handler.h"
+#include "error_handling.h"
 
 int main(int argc, char** argv) {
 	std::vector<std::pair<std::string, std::string>> arguments = handle_args(argc, argv);
@@ -23,7 +24,7 @@ int main(int argc, char** argv) {
 			if(i.first == "output") {output_file = i.second;}
 		}
 
-		//std::ios::sync_with_stdio(false);
+		Error_handler::compilable = true;
 		std::cout << std::fixed << std::setprecision(1);
 		auto start = std::chrono::high_resolution_clock::now();
 		std::vector<Lexer::token> tokens = Lexer::process(input_file, debug);

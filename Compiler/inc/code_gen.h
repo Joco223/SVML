@@ -9,6 +9,7 @@
 
 #include "Lexer.h"
 #include "Parser.h"
+#include "error_handling.h"
 
 namespace code_gen {
 	struct instruction {

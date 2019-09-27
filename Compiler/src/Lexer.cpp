@@ -6,7 +6,7 @@ namespace Lexer {
 		std::ifstream f(file_path.c_str());
 
 		if(!f.good()) {
-			std::cout << "Error opening file: " << file_path << ", ignoring.\n";
+			Error_handler::error_out("Error opening file: " + file_path + ".");
 			return "";
 		}
 		
@@ -194,7 +194,7 @@ namespace Lexer {
 					for(auto& i : additional_tokens)
 						tokens.push_back(i);
 				}else{
-					std::cout << "Invalid macro: @" << use << " on line: " << line << '\n';
+					Error_handler::error_out("Invalid macro: @" + use + " on line: " + std::to_string(line)); 
 					tokens.clear();
 					return tokens;
 				}
@@ -205,7 +205,9 @@ namespace Lexer {
 			}else if(input[i] != '\t' && input[i] != '\n') {
 				chunk = chunk + input[i];
 			}else if(input[i] != '\t') {
-				std::cout << "Invalid token: <" << input[i] << "> on line: " << line << '\n';
+				std::string tmp = "Invalid token: ";
+				tmp.push_back(input[i]);
+				Error_handler::error_out(tmp + " on line: " + std::to_string(line));
 				tokens.clear();
 				return tokens;
 			}

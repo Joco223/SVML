@@ -5,11 +5,6 @@ namespace code_gen {
 	std::vector<function> functions;
 	std::vector<bool> used_registers = {false, false, false, false, false, false, false, false};
 
-	void print_error(std::string error) {
-		std::cout << "\n\033[31m" << "ERROR" << "\033[0m - ";
-		std::cout << error << '\n';
-	}
-
 	int find_free_reg() {
 		int index = -1;
 		for(int i = 0; i < 8; i++) {
@@ -126,7 +121,7 @@ namespace code_gen {
 		}
 
 		if(index == -1) { //Function not found
-			print_error("Unknown function called: " + ins.identifier + " - on line: " + std::to_string(ins.line));
+			Error_handler::error_out("Unknown function called: " + ins.identifier + " - on line: " + std::to_string(ins.line));
 			return;
 		}else{ //Function found
 			argument_mem_locations.push_back(index); //Push the function index
@@ -187,7 +182,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 								if(mem_pos == -1) {
-									print_error("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+									Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
 									return -1;
 								}
 								instructions.push_back({0x3, {0, (unsigned int)mem_pos, 0}});
@@ -200,7 +195,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 								if(mem_pos == -1) {
-									print_error("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+									Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
 									return -1;
 								}
 								instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
@@ -267,7 +262,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(b).name);
 								if(mem_pos == -1) {
-									print_error("Unknown variable used: " + std::get<0>(b).name + " - on line: " + std::to_string(std::get<0>(b).line));
+									Error_handler::error_out("Unknown variable used: " + std::get<0>(b).name + " - on line: " + std::to_string(std::get<0>(b).line));
 									return -1;
 								}
 								instructions.push_back({0x3, {1, (unsigned int)mem_pos, 0}});
@@ -284,7 +279,7 @@ namespace code_gen {
 							}else{
 								int mem_pos = find_variable(local_scope, std::get<0>(b).name);
 								if(mem_pos == -1) {
-									print_error("Unknown variable used: " + std::get<0>(b).name + " - on line: " + std::to_string(std::get<0>(b).line));
+									Error_handler::error_out("Unknown variable used: " + std::get<0>(b).name + " - on line: " + std::to_string(std::get<0>(b).line));
 									return -1;
 								}
 								instructions.push_back({0x3, {(unsigned int)b_used, (unsigned int)mem_pos, 0}});
@@ -434,7 +429,7 @@ namespace code_gen {
 					}else{
 						int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 						if(mem_pos == -1) {
-							print_error("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+							Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
 							return -1;
 						}
 						instructions.push_back({0x3, {0, (unsigned int)mem_pos, 0}});
@@ -447,7 +442,7 @@ namespace code_gen {
 					}else{
 						int mem_pos = find_variable(local_scope, std::get<0>(a).name);
 						if(mem_pos == -1) {
-							print_error("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
+							Error_handler::error_out("Unknown variable used: " + std::get<0>(a).name + " - on line: " + std::to_string(std::get<0>(a).line));
 							return -1;
 						}
 						instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
@@ -634,7 +629,7 @@ namespace code_gen {
 	void generate(Parser::tree_node* code_tree, std::string output_file_path) {
 		for(auto& i : code_tree->nodes) {
 			if(i->ins.ins_type != Parser::it_function_definition) {
-				print_error("Non function definition instruction found: " + std::to_string(i->ins.ins_type) + " - on line: " + std::to_string(i->ins.line));
+				Error_handler::error_out("Non function definition instruction found: " + std::to_string(i->ins.ins_type) + " - on line: " + std::to_string(i->ins.line));
 			}else{
 				process_function_definition(i);
 			}
@@ -651,33 +646,33 @@ namespace code_gen {
 		}
 
 		if(main_function_index == -1) {
-			print_error("No >main< function found, aborting compilation.");
+			Error_handler::error_out("No >main< function found, aborting compilation.");
 			return;
 		}
 
 		
+		if(Error_handler::compilable) {
+			std::ofstream output_file;
+			output_file.open(output_file_path, std::ios::binary);
 
-		std::ofstream output_file;
-		output_file.open(output_file_path, std::ios::binary);
+			output_file.write((char*)&main_function_index, sizeof(main_function_index)); 
+			output_file.write((char*)&function_count, sizeof(function_count));
 
-		output_file.write((char*)&main_function_index, sizeof(main_function_index)); 
-		output_file.write((char*)&function_count, sizeof(function_count));
+			for(auto& i : functions) {
+				int instruction_count = i.instructions.size();
+				output_file.write((char*)&instruction_count, sizeof(instruction_count));
 
-		for(auto& i : functions) {
-			int instruction_count = i.instructions.size();
-			output_file.write((char*)&instruction_count, sizeof(instruction_count));
-
-			for(auto& j : i.instructions) {
-				output_file.write((char*)&j.op_code, sizeof(j.op_code));
-				unsigned char argument_count = j.args.size();
-				output_file.write((char*)&argument_count, sizeof(argument_count));
-				for(auto& k : j.args) {
-					output_file.write((char*)&k, sizeof(k));
+				for(auto& j : i.instructions) {
+					output_file.write((char*)&j.op_code, sizeof(j.op_code));
+					unsigned char argument_count = j.args.size();
+					output_file.write((char*)&argument_count, sizeof(argument_count));
+					for(auto& k : j.args) {
+						output_file.write((char*)&k, sizeof(k));
+					}
 				}
 			}
+			std::cout << "\nProgram sucessfully compiled!\n";
+			output_file.close();
 		}
-		std::cout << "\nProgram sucessfully compiled!\n";
-
-		output_file.close();
 	}
 }

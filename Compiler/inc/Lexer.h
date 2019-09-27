@@ -8,6 +8,8 @@
 #include <math.h>
 #include <chrono>
 
+#include "error_handling.h"
+
 namespace Lexer {
 
 	struct token {

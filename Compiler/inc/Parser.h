@@ -8,6 +8,7 @@
 #include <chrono>
 
 #include "Lexer.h"
+#include "error_handling.h"
 
 namespace Parser {
 	enum types {

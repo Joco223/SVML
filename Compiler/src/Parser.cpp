@@ -17,8 +17,6 @@ namespace Parser {
 		std::cout << '\r';
 	}
 
-	bool compilable = true;
-
 	int get_type(Lexer::token type) {
 		if(type.name == "void") {
 			return t_void;
@@ -27,8 +25,7 @@ namespace Parser {
 		}else if(type.name == "bool") {
 			return t_bool;
 		}else{
-			compilable = false;
-			std::cout << "ERROR, unknown type: " << type.name << " on line: " << type.line << '\n';
+			Error_handler::error_out("Unknown type: " + type.name + " on line: " + std::to_string(type.line));
 			return -1;
 		}
 	}
@@ -76,8 +73,7 @@ namespace Parser {
 			
 			arg_def argument;
 			if(tokens[i].type != Lexer::tt_type) {
-				compilable = false;
-				std::cout << "ERROR, unknown type: " << tokens[i].name << " on line: " << tokens[i].line << '\n';
+				Error_handler::error_out("Unknown type: " + tokens[i].name + " on line: " + std::to_string(tokens[i].line));
 				break;
 			}else{
 				argument.arg_type = get_type(tokens[i]);
@@ -88,8 +84,7 @@ namespace Parser {
 				break;
 			}else{
 				if(tokens[i].type != Lexer::tt_identifier) {
-					compilable = false;
-					std::cout << "ERROR, invalid identifier: " << tokens[i].name << " on line: " << tokens[i].line << '\n';
+					Error_handler::error_out("Invalid identifier: " + tokens[i].name + " on line: " + std::to_string(tokens[i].line));
 					break;
 				}else{
 					argument.name = tokens[i].name;
@@ -176,8 +171,6 @@ namespace Parser {
 	instruction process_while_stat(const std::vector<Lexer::token>& tokens, const int match_start, const int match_end) {
 		instruction while_stat;
 		while_stat.ins_type = it_while;
-
-		std::cout << '#' << tokens[match_start].type << '\n';
 
 		std::vector<std::variant<Lexer::token, instruction>> expression;
 		for(int i = match_start + 2; i < match_end; i++) {
