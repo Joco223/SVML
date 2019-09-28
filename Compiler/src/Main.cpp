@@ -31,14 +31,7 @@ int main(int argc, char** argv) {
 		Parser::tree_node* root = Parser::parse(tokens, debug, 0, tokens.size());
 		code_gen::generate(root, output_file);
 		auto end = std::chrono::high_resolution_clock::now();
-		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
-		
-		/*if(tokens.size() == 0) return -1;
-		std::cout << '\n';
-		Parser::tree_node* code_tree = Parser::process(tokens, debug);
-		if(code_tree == nullptr) return -1;	
-		std::cout << '\n';
-		*/
+		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms\n";
 	}
 
 	return 0;

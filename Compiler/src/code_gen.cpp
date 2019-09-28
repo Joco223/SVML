@@ -128,8 +128,105 @@ namespace code_gen {
 			for(auto& i : ins.expressions) { //Handle all the arguments
 				argument_mem_locations.push_back(handle_expression(i, instructions, local_scope, mem_count));
 			}
-			instructions.push_back({0x1C, argument_mem_locations});
+			instructions.push_back({bc_call, argument_mem_locations});
 			return;
+		}
+	}
+
+	void load_variable(int& reg_used, int& mem_index, std::variant<Lexer::token, Parser::instruction, int, std::string>& variable, std::vector<instruction>& instructions, scope* local_scope, int& mem_count) {
+		if(variable.index() == 1) {
+			handle_function_call(std::get<1>(variable), instructions, local_scope, mem_count);
+			int free_reg = find_free_reg();
+			if(free_reg == -1) {
+				mem_index = mem_count;
+				instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+				instructions.push_back({bc_write_mem, {0, (unsigned int)mem_index, 0}}); //Store the reg value
+				instructions.push_back({bc_read_mem, {0, (unsigned int)(mem_index-1), 0}}); //Read the return value
+				reg_used = 0;	
+				mem_count++;
+			}else{
+				instructions.push_back({bc_read_mem, {(unsigned int)free_reg, (unsigned int)mem_count, 0}});
+				reg_used = free_reg;
+			}
+		}else if(variable.index() == 0) {
+			int free_reg = find_free_reg();
+			if(free_reg == -1) {
+				mem_index = mem_count;
+				instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+				instructions.push_back({bc_write_mem, {0, (unsigned int)mem_index, 0}}); //Store the reg value
+				if(std::get<0>(variable).type == Lexer::tt_value) {
+					instructions.push_back({bc_set, {0, (unsigned int)std::stoi(std::get<0>(variable).name)}});
+				}else{
+					int mem_pos = find_variable(local_scope, std::get<0>(variable).name);
+					if(mem_pos == -1) {
+						Error_handler::error_part_out("Unknown variable used: " + std::get<0>(variable).name + " - on: " + std::get<0>(variable).path + ":" + std::to_string(std::get<0>(variable).column) + ":" + std::to_string(std::get<0>(variable).line), std::get<0>(variable).column, std::get<0>(variable).line, std::get<0>(variable).name.length(), std::get<0>(variable).file_index);
+						reg_used = -1;
+						return;
+					}
+					instructions.push_back({bc_read_mem, {0, (unsigned int)mem_pos, 0}});
+				}
+				reg_used = 0;
+				mem_count++;
+			}else{
+				if(std::get<0>(variable).type == Lexer::tt_value) {
+					instructions.push_back({bc_set, {(unsigned int)free_reg, (unsigned int)std::stoi(std::get<0>(variable).name)}});
+				}else{
+					int mem_pos = find_variable(local_scope, std::get<0>(variable).name);
+					if(mem_pos == -1) {
+						Error_handler::error_part_out("Unknown variable used: " + std::get<0>(variable).name + " - on: " + std::get<0>(variable).path + ":" + std::to_string(std::get<0>(variable).column) + ":" + std::to_string(std::get<0>(variable).line), std::get<0>(variable).column, std::get<0>(variable).line, std::get<0>(variable).name.length(), std::get<0>(variable).file_index);
+						reg_used = -1;
+						return;
+					}
+					instructions.push_back({bc_read_mem, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
+				}
+				reg_used = free_reg;
+			}
+		}else if(variable.index() == 2) {
+			int free_reg = find_free_reg();
+			if(free_reg == -1) {
+				mem_index = mem_count;
+				instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+				instructions.push_back({bc_write_mem, {0, (unsigned int)mem_index, 0}}); //Store the reg value
+				instructions.push_back({bc_read_reg, {0, (unsigned int)std::get<2>(variable)}}); //Load the value from another register
+				reg_used = 0;	
+				mem_count++;
+			}else{
+				instructions.push_back({bc_read_reg, {(unsigned int)free_reg, (unsigned int)std::get<2>(variable)}});
+				reg_used = free_reg;
+			}
+		}else{
+			int free_reg = find_free_reg();
+			if(free_reg == -1) {
+				mem_index = mem_count;
+				instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+				instructions.push_back({bc_write_mem, {0, (unsigned int)mem_index, 0}}); //Store the reg value
+				instructions.push_back({bc_read_mem, {0, (unsigned int)std::stoi(std::get<3>(variable)), 0}}); //Load the value from a memory location
+				reg_used = 0;	
+				instructions.push_back({bc_dealloc, {(unsigned int)std::stoi(std::get<3>(variable))}});
+			}else{
+				instructions.push_back({bc_read_mem, {(unsigned int)free_reg, (unsigned int)std::stoi(std::get<3>(variable)), 0}});
+				reg_used = free_reg;
+				instructions.push_back({bc_dealloc, {(unsigned int)std::stoi(std::get<3>(variable))}});
+				mem_count--;
+			}
+		}
+	}
+
+	void check_result(int result_reg, int a_used, int b_used, int& mem_count, int mem_index, std::vector<instruction>& instructions, std::stack<std::variant<Lexer::token, Parser::instruction, int, std::string>>& execution_stack) {
+		if(mem_index != -1) {
+			if(result_reg == a_used) {
+				instructions.push_back({bc_alloc, {1}});
+				instructions.push_back({bc_write_mem, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
+				execution_stack.push(std::to_string(mem_count));
+				mem_count++;
+				used_registers[a_used] = false;
+				used_registers[b_used] = false;
+			}
+			
+			instructions.push_back({bc_read_mem, {(unsigned int)a_used, (unsigned int)mem_index, 0}});
+			instructions.push_back({bc_dealloc, {(unsigned int)mem_index}});
+			mem_count--;
+			used_registers[a_used] = true;
 		}
 	}
 
@@ -153,236 +250,47 @@ namespace code_gen {
 
 					int a_used = -1;
 					int mem_index_a = -1;
+					load_variable(a_used, mem_index_a, a, instructions, local_scope, mem_count);
+					if(a_used == -1) return -1;
+					used_registers[a_used] = true;
 
 					int b_used = 0;
 					int mem_index_b = -1;
-
-					if(a.index() == 1) {
-						handle_function_call(std::get<1>(a), instructions, local_scope, mem_count);
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_a = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-							instructions.push_back({0x3, {0, (unsigned int)(mem_index_a-1), 0}}); //Read the return value
-							a_used = 0;	
-							mem_count++;
-						}else{
-							instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_count, 0}});
-							a_used = free_reg;
-						}
-					}else if(a.index() == 0) {
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_a = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-							if(std::get<0>(a).type == Lexer::tt_value) {
-								instructions.push_back({0x1, {0, (unsigned int)std::stoi(std::get<0>(a).name)}});
-							}else{
-								int mem_pos = find_variable(local_scope, std::get<0>(a).name);
-								if(mem_pos == -1) {
-									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
-									return -1;
-								}
-								instructions.push_back({0x3, {0, (unsigned int)mem_pos, 0}});
-							}
-							a_used = 0;
-							mem_count++;
-						}else{
-							if(std::get<0>(a).type == Lexer::tt_value) {
-								instructions.push_back({0x1, {(unsigned int)free_reg, (unsigned int)std::stoi(std::get<0>(a).name)}});
-							}else{
-								int mem_pos = find_variable(local_scope, std::get<0>(a).name);
-								if(mem_pos == -1) {
-									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
-									return -1;
-								}
-								instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
-							}
-							a_used = free_reg;
-						}
-					}else if(a.index() == 2) {
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_a = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-							instructions.push_back({0x2, {0, (unsigned int)std::get<2>(a)}}); //Load the value from another register
-							a_used = 0;	
-							mem_count++;
-						}else{
-							instructions.push_back({0x2, {(unsigned int)free_reg, (unsigned int)std::get<2>(a)}});
-							a_used = free_reg;
-						}
-					}else{
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_a = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-							instructions.push_back({0x3, {0, (unsigned int)std::stoi(std::get<3>(a)), 0}}); //Load the value from a memory location
-							a_used = 0;	
-							instructions.push_back({0x6, {(unsigned int)std::stoi(std::get<3>(a))}});
-						}else{
-							instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)std::stoi(std::get<3>(a)), 0}});
-							a_used = free_reg;
-							instructions.push_back({0x6, {(unsigned int)std::stoi(std::get<3>(a))}});
-							mem_count--;
-						}
-					}
-
-					used_registers[a_used] = true;
-
-					if(b.index() == 1) {
-						handle_function_call(std::get<1>(b), instructions, local_scope, mem_count);
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_b = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {1, (unsigned int)mem_index_b, 0}}); //Store the reg value
-							instructions.push_back({0x3, {1, (unsigned int)mem_index_b-1, 0}}); //Read the return value
-							b_used = 1;
-							mem_count++;
-						}else{
-							b_used = free_reg;
-							while(b_used == a_used)
-								b_used++;
-
-							instructions.push_back({0x3, {(unsigned int)b_used, (unsigned int)mem_count, 0}});
-						}
-					}else if(b.index() == 0) {
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_b = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {1, (unsigned int)mem_index_b, 0}}); //Store the reg value
-							if(std::get<0>(b).type == Lexer::tt_value) {
-								instructions.push_back({0x1, {1, (unsigned int)std::stoi(std::get<0>(b).name)}});
-							}else{
-								int mem_pos = find_variable(local_scope, std::get<0>(b).name);
-								if(mem_pos == -1) {
-									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(b).name + " - on: " + std::get<0>(b).path + ":" + std::to_string(std::get<0>(b).column) + ":" + std::to_string(std::get<0>(b).line), std::get<0>(b).column, std::get<0>(b).line, std::get<0>(b).name.length(), std::get<0>(b).file_index);
-									return -1;
-								}
-								instructions.push_back({0x3, {1, (unsigned int)mem_pos, 0}});
-							}
-							b_used = 1;
-							mem_count++;
-						}else{
-							b_used = free_reg;
-							while(b_used == a_used)
-								b_used++;
-
-							if(std::get<0>(b).type == Lexer::tt_value) {
-								instructions.push_back({0x1, {(unsigned int)b_used, (unsigned int)std::stoi(std::get<0>(b).name)}});
-							}else{
-								int mem_pos = find_variable(local_scope, std::get<0>(b).name);
-								if(mem_pos == -1) {
-									Error_handler::error_part_out("Unknown variable used: " + std::get<0>(b).name + " - on: " + std::get<0>(b).path + ":" + std::to_string(std::get<0>(b).column) + ":" + std::to_string(std::get<0>(b).line), std::get<0>(b).column, std::get<0>(b).line, std::get<0>(b).name.length(), std::get<0>(b).file_index);
-									return -1;
-								}
-								instructions.push_back({0x3, {(unsigned int)b_used, (unsigned int)mem_pos, 0}});
-							}
-						}
-
-					}else if(b.index() == 2) {
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_b = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {1, (unsigned int)mem_index_b, 0}}); //Store the reg value
-							instructions.push_back({0x2, {1, (unsigned int)std::get<2>(b)}}); //Load the value from another register
-							b_used = 0;	
-							mem_count++;
-						}else{
-							b_used = free_reg;
-							while(b_used == a_used)
-								b_used++;
-
-							instructions.push_back({0x2, {(unsigned int)b_used, (unsigned int)std::get<2>(b)}});
-						}
-					}else{
-						int free_reg = find_free_reg();
-						if(free_reg == -1) {
-							mem_index_b = mem_count;
-							instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-							instructions.push_back({0x4, {1, (unsigned int)mem_index_b, 0}}); //Store the reg value
-							instructions.push_back({0x3, {1, (unsigned int)std::stoi(std::get<3>(b)), 0}}); //Load the value from a memory location
-							b_used = 0;	
-							instructions.push_back({0x6, {(unsigned int)std::stoi(std::get<3>(b))}});
-						}else{
-							b_used = free_reg;
-							while(b_used == a_used)
-								b_used++;
-
-							instructions.push_back({0x3, {(unsigned int)b_used, (unsigned int)std::stoi(std::get<3>(b)), 0}});
-							instructions.push_back({0x6, {(unsigned int)std::stoi(std::get<3>(b))}});
-							mem_count--;
-						}
-					}
-
+					load_variable(b_used, mem_index_b, b, instructions, local_scope, mem_count);
+					if(b_used == -1) return -1;
 					used_registers[b_used] = true;
+
 					std::string op = std::get<0>(postfix_expression[i]).name;
 					result_reg = a_used;
 
 					if(op == "+") {
-						instructions.push_back({0x7, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_add, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == "-") {
-						instructions.push_back({0x8, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_sub, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == "*") {
-						instructions.push_back({0x9, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_mult, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == "/") {
-						instructions.push_back({0xA, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_div_u, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == "%") {
-						instructions.push_back({0xC, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_mod, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == "<") {
-						instructions.push_back({0x17, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_bigger, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == ">") {
-						instructions.push_back({0x17, {(unsigned int)b_used, (unsigned int)a_used}});
+						instructions.push_back({bc_bigger, {(unsigned int)b_used, (unsigned int)a_used}});
 						result_reg = b_used;
 					}else if(op == "<=") {
-						instructions.push_back({0x18, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_bigger_equ, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == ">=") {
-						instructions.push_back({0x18, {(unsigned int)b_used, (unsigned int)a_used}});
+						instructions.push_back({bc_bigger_equ, {(unsigned int)b_used, (unsigned int)a_used}});
 						result_reg = b_used;
 					}else if(op == "==") {
-						instructions.push_back({0x15, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_equ, {(unsigned int)a_used, (unsigned int)b_used}});
 					}else if(op == "!=") {
-						instructions.push_back({0x16, {(unsigned int)a_used, (unsigned int)b_used}});
+						instructions.push_back({bc_diff, {(unsigned int)a_used, (unsigned int)b_used}});
 					}
 
-					if(mem_index_a != -1) {
-						if(result_reg == a_used) {
-							instructions.push_back({0x5, {1}});
-							instructions.push_back({0x4, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
-							execution_stack.push(std::to_string(mem_count));
-							mem_count++;
-							used_registers[a_used] = false;
-							used_registers[b_used] = false;
-						}
-						
-						instructions.push_back({0x3, {(unsigned int)a_used, (unsigned int)mem_index_a, 0}});
-						instructions.push_back({0x6, {(unsigned int)mem_index_a}});
-						mem_count--;
-						used_registers[a_used] = true;
-					}
-
-					if(mem_index_b != -1) {
-						if(result_reg == b_used) {
-							instructions.push_back({0x5, {1}});
-							instructions.push_back({0x4, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
-							execution_stack.push(std::to_string(mem_count));
-							mem_count++;
-							used_registers[a_used] = false;
-							used_registers[b_used] = false;
-						}
-						
-						instructions.push_back({0x3, {(unsigned int)b_used, (unsigned int)mem_index_b, 0}});
-						instructions.push_back({0x6, {(unsigned int)mem_index_a}});
-						mem_count--;
-						used_registers[b_used] = true;
-					}
+					check_result(result_reg, a_used, b_used, mem_count, mem_index_a, instructions, execution_stack);
+					check_result(result_reg, b_used, a_used, mem_count, mem_index_b, instructions, execution_stack);
 
 					if(mem_index_a == -1 && result_reg == a_used) {
 						execution_stack.push(a_used);
@@ -403,98 +311,24 @@ namespace code_gen {
 
 			int a_used = 0;
 			int mem_index_a = -1;
-
-			if(a.index() == 1) {
-				handle_function_call(std::get<1>(a), instructions, local_scope, mem_count);
-				int free_reg = find_free_reg();
-				if(free_reg == -1) {
-					mem_index_a = mem_count;
-					instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-					instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-					instructions.push_back({0x3, {0, (unsigned int)mem_index_a-1, 0}}); //Read the return value
-					a_used = 0;	
-					mem_count++;
-				}else{
-					instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_count, 0}});
-					a_used = free_reg;
-				}
-			}else if(a.index() == 0) {
-				int free_reg = find_free_reg();
-				if(free_reg == -1) {
-					mem_index_a = mem_count;
-					instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-					instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-					if(std::get<0>(a).type == Lexer::tt_value) {
-						instructions.push_back({0x1, {0, (unsigned int)std::stoi(std::get<0>(a).name)}});
-					}else{
-						int mem_pos = find_variable(local_scope, std::get<0>(a).name);
-						if(mem_pos == -1) {
-							Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
-							return -1;
-						}
-						instructions.push_back({0x3, {0, (unsigned int)mem_pos, 0}});
-					}
-					a_used = 0;
-					mem_count++;
-				}else{
-					if(std::get<0>(a).type == Lexer::tt_value) {
-						instructions.push_back({0x1, {(unsigned int)free_reg, (unsigned int)std::stoi(std::get<0>(a).name)}});
-					}else{
-						int mem_pos = find_variable(local_scope, std::get<0>(a).name);
-						if(mem_pos == -1) {
-							Error_handler::error_part_out("Unknown variable used: " + std::get<0>(a).name + " - on: " + std::get<0>(a).path + ":" + std::to_string(std::get<0>(a).column) + ":" + std::to_string(std::get<0>(a).line), std::get<0>(a).column, std::get<0>(a).line, std::get<0>(a).name.length(), std::get<0>(a).file_index);
-							return -1;
-						}
-						instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)mem_pos, 0}});
-					}
-					a_used = free_reg;
-				}
-			}else if(a.index() == 2) {
-				int free_reg = find_free_reg();
-				if(free_reg == -1) {
-					mem_index_a = mem_count;
-					instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-					instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-					instructions.push_back({0x2, {0, (unsigned int)std::get<2>(a)}}); //Load the value from another register
-					a_used = 0;	
-					mem_count++;
-				}else{
-					instructions.push_back({0x2, {(unsigned int)free_reg, (unsigned int)std::get<2>(a)}});
-					a_used = free_reg;
-				}
-			}else{
-				int free_reg = find_free_reg();
-				if(free_reg == -1) {
-					mem_index_a = mem_count;
-					instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-					instructions.push_back({0x4, {0, (unsigned int)mem_index_a, 0}}); //Store the reg value
-					instructions.push_back({0x3, {0, (unsigned int)std::stoi(std::get<3>(a)), 0}}); //Load the value from a memory location
-					a_used = 0;	
-					instructions.push_back({0x6, {(unsigned int)std::stoi(std::get<3>(a))}});
-				}else{
-					instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)std::stoi(std::get<3>(a)), 0}});
-					a_used = free_reg;
-					instructions.push_back({0x6, {(unsigned int)std::stoi(std::get<3>(a))}});
-					mem_count--;
-				}
-			}
-
+			load_variable(a_used, mem_index_a, a, instructions, local_scope, mem_count);
+			if(a_used == -1) return -1;
 			result_reg = a_used;
 
-			instructions.push_back({0x5, {1}});
-			instructions.push_back({0x4, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
+			instructions.push_back({bc_alloc, {1}});
+			instructions.push_back({bc_write_mem, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
 			used_registers[result_reg] = false;
 			mem_count++;
 
 			if(mem_index_a != -1) {			
-				instructions.push_back({0x3, {(unsigned int)a_used, (unsigned int)mem_index_a, 0}});
-				instructions.push_back({0x6, {(unsigned int)mem_index_a}});
+				instructions.push_back({bc_read_mem, {(unsigned int)a_used, (unsigned int)mem_index_a, 0}});
+				instructions.push_back({bc_dealloc, {(unsigned int)mem_index_a}});
 				mem_count--;
 				used_registers[a_used] = true;
 			}
 		}else{
-			instructions.push_back({0x5, {1}});
-			instructions.push_back({0x4, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
+			instructions.push_back({bc_alloc, {1}});
+			instructions.push_back({bc_write_mem, {(unsigned int)result_reg, (unsigned int)mem_count, 0}});
 			used_registers[result_reg] = false;
 			mem_count++;
 		}
@@ -528,17 +362,17 @@ namespace code_gen {
 		int var_mem_location = handle_expression(node->ins.expressions[0], instructions, local_scope, mem_count);
 		int free_reg = find_free_reg();
 		if(free_reg == -1) {
-			instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-			instructions.push_back({0x4, {0, (unsigned int)mem_count, 0}}); //Store the reg value
-			instructions.push_back({0x3, {0, (unsigned int)var_mem_location, 0}}); //Load the value from a memory location
-			instructions.push_back({0x4, {0, (unsigned int)old_var_mem_location, 0}}); //Write to variable memory location
-			instructions.push_back({0x3, {0, (unsigned int)mem_count, 0}}); //Restore the old value in register
-			instructions.push_back({0x6, {(unsigned int)mem_count}}); //Deallocate the temporary value
+			instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+			instructions.push_back({bc_write_mem, {0, (unsigned int)mem_count, 0}}); //Store the reg value
+			instructions.push_back({bc_read_mem, {0, (unsigned int)var_mem_location, 0}}); //Load the value from a memory location
+			instructions.push_back({bc_write_mem, {0, (unsigned int)old_var_mem_location, 0}}); //Write to variable memory location
+			instructions.push_back({bc_read_mem, {0, (unsigned int)mem_count, 0}}); //Restore the old value in register
+			instructions.push_back({bc_dealloc, {(unsigned int)mem_count}}); //Deallocate the temporary value
 		}else{
-			instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)var_mem_location, 0}});
-			instructions.push_back({0x4, {(unsigned int)free_reg, (unsigned int)old_var_mem_location, 0}});
+			instructions.push_back({bc_read_mem, {(unsigned int)free_reg, (unsigned int)var_mem_location, 0}});
+			instructions.push_back({bc_write_mem, {(unsigned int)free_reg, (unsigned int)old_var_mem_location, 0}});
 		}
-		instructions.push_back({0x6, {(unsigned int)var_mem_location}});
+		instructions.push_back({bc_dealloc, {(unsigned int)var_mem_location}});
 	}
 
 	void process_if_statement(Parser::tree_node* node, std::vector<instruction>& instructions, scope* local_scope, int& mem_count) {
@@ -546,15 +380,15 @@ namespace code_gen {
 		
 		int free_reg = find_free_reg();
 		if(free_reg == -1) {
-			instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-			instructions.push_back({0x4, {0, (unsigned int)mem_count, 0}}); //Store the reg value
-			instructions.push_back({0x3, {0, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
+			instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+			instructions.push_back({bc_write_mem, {0, (unsigned int)mem_count, 0}}); //Store the reg value
+			instructions.push_back({bc_read_mem, {0, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
 			free_reg = 0;
 		}else{
-			instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
+			instructions.push_back({bc_read_mem, {(unsigned int)free_reg, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
 		}
 		int ins_to_adjust = instructions.size(); //Jump instruction to adjust later
-		instructions.push_back({0x1A, {(unsigned int)free_reg, 0}});
+		instructions.push_back({bc_jmp_z, {(unsigned int)free_reg, 0}});
 
 		for(auto& i : node->nodes) { //Process everything inside the if statement
 			scope* if_scope = new scope;
@@ -564,7 +398,7 @@ namespace code_gen {
 		}
 
 		instructions[ins_to_adjust].args[1] = instructions.size();
-		instructions.push_back({0x19, {(unsigned int)instructions.size()}}); //Add a jump in case there is an else statement
+		instructions.push_back({bc_jmp, {(unsigned int)instructions.size()}}); //Add a jump in case there is an else statement
 	}
 
 	void process_else(Parser::tree_node* node, std::vector<instruction>& instructions, scope* local_scope, int& mem_count) {
@@ -580,7 +414,7 @@ namespace code_gen {
 
 	void process_return(Parser::tree_node* node, std::vector<instruction>& instructions, scope* local_scope, int& mem_count) {
 		int return_value_mem_location = handle_expression(node->ins.expressions[0], instructions, local_scope, mem_count);
-		instructions.push_back({0x1D, {(unsigned int)return_value_mem_location}});
+		instructions.push_back({bc_ret, {(unsigned int)return_value_mem_location}});
 	}
 
 	void process_while(Parser::tree_node* node, std::vector<instruction>& instructions, scope* local_scope, int& mem_count) {
@@ -589,15 +423,15 @@ namespace code_gen {
 
 		int free_reg = find_free_reg();
 		if(free_reg == -1) {
-			instructions.push_back({0x5, {1}}); //Allocate memory to store value from first reg
-			instructions.push_back({0x4, {0, (unsigned int)mem_count, 0}}); //Store the reg value
-			instructions.push_back({0x3, {0, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
+			instructions.push_back({bc_alloc, {1}}); //Allocate memory to store value from first reg
+			instructions.push_back({bc_write_mem, {0, (unsigned int)mem_count, 0}}); //Store the reg value
+			instructions.push_back({bc_read_mem, {0, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
 			free_reg = 0;
 		}else{
-			instructions.push_back({0x3, {(unsigned int)free_reg, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
+			instructions.push_back({bc_read_mem, {(unsigned int)free_reg, (unsigned int)condition_mem_location, 0}}); //Load the value from a memory location
 		}
 		int ins_to_adjust = instructions.size(); //Jump instruction to adjust later
-		instructions.push_back({0x1A, {(unsigned int)free_reg, 0}});
+		instructions.push_back({bc_jmp_z, {(unsigned int)free_reg, 0}});
 
 		for(auto& i : node->nodes) { //Process everything inside the while loop
 			scope* if_scope = new scope;
@@ -606,7 +440,7 @@ namespace code_gen {
 			process_node(i, instructions, local_scope->child_scopes[local_scope->child_scopes.size()-1], mem_count);
 		}
 
-		instructions.push_back({0x19, {(unsigned int)check_again_mem_location}}); //return to the check
+		instructions.push_back({bc_jmp, {(unsigned int)check_again_mem_location}}); //return to the check
 		instructions[ins_to_adjust].args[1] = instructions.size();	
 	}
 
@@ -617,7 +451,7 @@ namespace code_gen {
 			case Parser::it_variable_change: process_variable_change(node, instructions, local_scope, mem_count);break;
 			case Parser::it_function_call: {
 				handle_function_call(node->ins, instructions, local_scope, mem_count);
-				instructions.push_back({0x6, {(unsigned int)mem_count}}); //Deallocate the function return variable (Function calls outside of an expression are treated as void)
+				instructions.push_back({bc_dealloc, {(unsigned int)mem_count}}); //Deallocate the function return variable (Function calls outside of an expression are treated as void)
 				break; }
 			case Parser::it_if_statement: process_if_statement(node, instructions, local_scope, mem_count); break;
 			case Parser::it_else: process_else(node, instructions, local_scope, mem_count);  break;

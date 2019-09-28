@@ -182,7 +182,7 @@ void CPU::execute(instruction c_ins) {
 			break; }
 
 		//I/O instructions---------------------------------------------------------------------------------------------------------------------------
-		case 0x24: //Put a value from a register into console (debug)
+		case 0x1E: //Put a value from a register into console (debug)
 			std::cout << registers[c_ins.args[0]];
 			function_stack[fn_stack_top].program_counter++;
 			break;
