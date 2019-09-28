@@ -1,4 +1,4 @@
-#SVML
+# SVML
 
 SVML is a hobby project mainly being made for fun and education, still very WIP. It is not meant to be a competitive language but the developement is making it to furthest of its capabilities. It has C-like syntax currently but that is subject to change. It is a VM based programming language and currently the compiler and the VM are separate.
 
@@ -41,6 +41,7 @@ void main() {
 ```
 
 -Function defintion in two separate files
+
 File_1:
 ```
 @use File_2.txt;
